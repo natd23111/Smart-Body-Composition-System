@@ -46,4 +46,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function bodyCompositions()
+    {
+        return $this->hasMany(BodyComposition::class);
+    }
+
+    public function recommendations()
+    {
+        return $this->hasMany(HealthRecommendation::class);
+    }
 }
