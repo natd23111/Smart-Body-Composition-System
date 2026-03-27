@@ -17,3 +17,8 @@ Route::post('/login', function (Request $request) {
         'token' => $user->createToken('api-token')->plainTextToken
     ]);
 });
+
+// Serve Vue app for all routes
+Route::get('/{path?}', function () {
+    return view('app');
+})->where('path', '.*');
