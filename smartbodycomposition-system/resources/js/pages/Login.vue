@@ -1,119 +1,188 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center px-4">
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
     <div class="w-full max-w-md">
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-2">
-          Smart Body<br />Composition
-        </h1>
-        <p class="text-slate-600 dark:text-slate-400">Track, Analyze, Transform</p>
+      <!-- Header Card with Logo -->
+      <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center mb-4">
+          <div class="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+            <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Smart Body Composition</h1>
+        <p class="text-gray-600">Track your health journey with precision</p>
       </div>
 
       <!-- Login Card -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Login</h2>
-
-        <!-- Error Alert -->
-        <Transition name="fade">
-          <div v-if="error" class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
-            {{ error }}
-          </div>
-        </Transition>
-
-        <!-- Success Alert -->
-        <Transition name="fade">
-          <div v-if="success" class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-600 dark:text-green-400 text-sm">
-            {{ success }}
-          </div>
-        </Transition>
-
-        <!-- Form -->
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <!-- Email Field -->
-          <div>
-            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Email Address
-            </label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white transition"
-              :disabled="loading"
-            />
-            <p v-if="errors.email" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.email }}</p>
-          </div>
-
-          <!-- Password Field -->
-          <div>
-            <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              required
-              placeholder="••••••••"
-              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white transition"
-              :disabled="loading"
-            />
-            <p v-if="errors.password" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errors.password }}</p>
-          </div>
-
-          <!-- Remember Me -->
-          <div class="flex items-center">
-            <input
-              id="remember"
-              v-model="form.remember"
-              type="checkbox"
-              class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              :disabled="loading"
-            />
-            <label for="remember" class="ml-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
-              Remember me
-            </label>
-          </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            :disabled="loading"
-            class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2"
-          >
-            <svg v-if="loading" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {{ loading ? 'Logging in...' : 'Login' }}
-          </button>
-        </form>
-
-        <!-- Divider -->
-        <div class="my-6 flex items-center gap-4">
-          <div class="flex-1 h-px bg-slate-300 dark:bg-slate-600"></div>
-          <span class="text-sm text-slate-500 dark:text-slate-400">or continue with</span>
-          <div class="flex-1 h-px bg-slate-300 dark:bg-slate-600"></div>
+      <div class="shadow-lg border border-gray-200 rounded-lg">
+        <!-- Card Header -->
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-6 py-4 rounded-t-lg">
+          <h2 class="text-2xl font-bold text-green-900">Welcome Back</h2>
+          <p class="text-gray-600 text-sm">Log in to access your health dashboard</p>
         </div>
 
-        <!-- Social Logins (Optional for future) -->
-        <div class="grid grid-cols-2 gap-3">
-          <button type="button" class="py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition" disabled title="Coming soon">
-            Google
-          </button>
-          <button type="button" class="py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition" disabled title="Coming soon">
-            Microsoft
-          </button>
+        <!-- Card Content -->
+        <div class="pt-6 px-6 pb-6">
+          <!-- Error Alert -->
+          <Transition name="fade">
+            <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <svg class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p class="text-red-800 text-sm">{{ error }}</p>
+            </div>
+          </Transition>
+
+          <!-- Success Alert -->
+          <Transition name="fade">
+            <div v-if="success" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+              <svg class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <p class="text-green-800 text-sm">{{ success }}</p>
+            </div>
+          </Transition>
+
+          <!-- Form -->
+          <form @submit.prevent="handleLogin" class="space-y-4">
+            <!-- Email Field -->
+            <div class="space-y-2">
+              <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="m10 9 5 3 5-3"></path>
+                </svg>
+                <input
+                  id="email"
+                  v-model="form.email"
+                  type="email"
+                  required
+                  placeholder="john@example.com"
+                  class="pl-10 w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition"
+                  :class="{ 'border-red-500 bg-red-50': errors.email }"
+                  :disabled="loading"
+                />
+              </div>
+              <p v-if="errors.email" class="text-xs text-red-600 flex items-center gap-1">
+                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                {{ errors.email }}
+              </p>
+            </div>
+
+            <!-- Password Field -->
+            <div class="space-y-2">
+              <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input
+                  id="password"
+                  v-model="form.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  required
+                  placeholder="••••••••"
+                  class="pl-10 pr-10 w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition"
+                  :class="{ 'border-red-500 bg-red-50': errors.password }"
+                  :disabled="loading"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  :disabled="loading"
+                >
+                  <svg v-if="!showPassword" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg v-else class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <p v-if="errors.password" class="text-xs text-red-600 flex items-center gap-1">
+                <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                {{ errors.password }}
+              </p>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full mt-6 py-2.5 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-green-400 disabled:to-emerald-400 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <svg v-if="loading" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ loading ? 'Logging in...' : 'Log In' }}
+            </button>
+
+            <!-- Forgot Password Link -->
+            <div class="text-center">
+              <button
+                type="button"
+                class="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          </form>
+
+          <!-- Divider -->
+          <div class="mt-6 pt-6 border-t border-gray-200 flex items-center gap-4">
+            <div class="flex-1 h-px bg-gray-300"></div>
+            <span class="text-sm text-gray-500">or continue with</span>
+            <div class="flex-1 h-px bg-gray-300"></div>
+          </div>
+
+          <!-- Social Logins -->
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition" disabled title="Coming soon">
+              Google
+            </button>
+            <button type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition" disabled title="Coming soon">
+              Microsoft
+            </button>
+          </div>
+
+          <!-- Toggle to Sign Up -->
+          <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p class="text-sm text-gray-600 mb-3">Don't have an account?</p>
+            <button
+              type="button"
+              class="w-full border border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700 font-semibold py-2 px-4 rounded-lg transition-colors"
+              disabled
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <!-- Terms and Privacy -->
+          <p class="text-xs text-gray-500 text-center mt-6">
+            By logging in, you agree to our
+            <button class="text-green-600 hover:underline">Terms of Service</button> and
+            <button class="text-green-600 hover:underline">Privacy Policy</button>
+          </p>
         </div>
       </div>
-
-      <!-- Footer -->
-      <p class="text-center text-sm text-slate-600 dark:text-slate-400 mt-6">
-        Don't have an account?
-        <a href="#" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">Sign up here</a>
-      </p>
     </div>
   </div>
 </template>
@@ -135,6 +204,7 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 const errors = ref({})
+const showPassword = ref(false)
 
 const handleLogin = async () => {
   // Reset messages
