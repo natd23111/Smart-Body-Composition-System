@@ -7,6 +7,33 @@ use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 
 // Public Auth Routes
+Route::post('/register', function (Request $request) {
+    $request->validate([
+        'name' => 'required|string|min:2',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+
+    try {
+        $user = \App\Models\User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => 'user',
+        ]);
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Registration successful',
+            'token' => $token,
+            'user' => $user,
+        ], 201);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Registration failed: ' . $e->getMessage()], 422);
+    }
+});
+
 Route::post('/login', function (Request $request) {
     $request->validate([
         'email' => 'required|email',
@@ -24,6 +51,18 @@ Route::post('/login', function (Request $request) {
         'message' => 'Login successful',
         'token' => $token,
         'user' => $user,
+    ]);
+});
+
+Route::post('/check-email', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+    ]);
+
+    $exists = \App\Models\User::where('email', $request->email)->exists();
+
+    return response()->json([
+        'available' => !$exists,
     ]);
 });
 

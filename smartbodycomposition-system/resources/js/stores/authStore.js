@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import { loginUser, logoutUser, getCurrentUser, setCurrentUser, getAuthToken } from '@/services/authService'
 
 // Singleton state - lives for the lifetime of the app
 let store = null
@@ -9,66 +9,51 @@ function createAuthStore() {
   const user = ref(null)
   const isAuthenticated = computed(() => user.value !== null)
 
-  // Mock user data (replace with API call to Laravel backend)
-  const mockUser = {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'user', // 'user' or 'admin'
-  }
-
   // Initialize from localStorage or session
   const initAuth = () => {
-    const storedUser = localStorage.getItem('user')
+    const storedUser = getCurrentUser()
     if (storedUser) {
-      try {
-        user.value = JSON.parse(storedUser)
-      } catch (e) {
-        localStorage.removeItem('user')
-        user.value = null
-      }
+      user.value = storedUser
+      console.log('Auth initialized with user:', storedUser.email)
     }
   }
 
-  // Login
+  // Login with real backend API
   const login = async (email, password) => {
     try {
-      // In production, call your Laravel login endpoint
-      // const response = await axios.post('/api/login', { email, password })
-
-      // Mock login - replace with actual API call
-      user.value = mockUser
-      localStorage.setItem('user', JSON.stringify(mockUser))
+      console.log('Attempting login with:', email)
+      const response = await loginUser(email, password)
+      user.value = response
+      console.log('Login successful:', response.email)
       return true
     } catch (error) {
-      console.error('Login failed:', error)
-      return false
+      console.error('Login error:', error.message)
+      throw error
     }
   }
 
-  // Logout - clear everything
+  // Logout - call backend API and clear everything
   const logout = async () => {
     try {
-      // In production: await axios.post('/api/logout')
-
-      // Clear all auth data
-      localStorage.removeItem('user')
-      localStorage.removeItem('auth_token')
+      console.log('Starting logout...')
+      await logoutUser()
       user.value = null
-
-      console.log('Logout successful - user cleared:', user.value)
+      console.log('Logout successful')
       return true
     } catch (error) {
-      console.error('Logout failed:', error)
-      return false
+      console.error('Logout error:', error.message)
+      // Still clear user state even if API call fails
+      user.value = null
+      return true
     }
   }
 
-  // Set user role (for testing admin features)
+  // Set user role (for testing/admin features)
   const setUserRole = (role) => {
     if (user.value) {
       user.value.role = role
-      localStorage.setItem('user', JSON.stringify(user.value))
+      setCurrentUser(user.value)
+      console.log('User role updated to:', role)
     }
   }
 
@@ -78,7 +63,8 @@ function createAuthStore() {
     login,
     logout,
     setUserRole,
-    initAuth
+    initAuth,
+    getToken: () => getAuthToken(),
   }
 }
 

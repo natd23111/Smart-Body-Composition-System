@@ -74,7 +74,7 @@
               </svg>
             </button>
             <div class="absolute right-0 mt-0 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block border border-gray-200 z-10">
-              <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 rounded-t-lg">Settings</a>
+              <router-link to="/settings" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 rounded-t-lg">Settings</router-link>
               <button
                 @click="handleLogout"
                 :disabled="logoutLoading"

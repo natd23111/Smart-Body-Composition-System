@@ -146,41 +146,16 @@
             </div>
           </form>
 
-          <!-- Divider -->
-          <div class="mt-6 pt-6 border-t border-gray-200 flex items-center gap-4">
-            <div class="flex-1 h-px bg-gray-300"></div>
-            <span class="text-sm text-gray-500">or continue with</span>
-            <div class="flex-1 h-px bg-gray-300"></div>
-          </div>
-
-          <!-- Social Logins -->
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition" disabled title="Coming soon">
-              Google
-            </button>
-            <button type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition" disabled title="Coming soon">
-              Microsoft
-            </button>
-          </div>
-
           <!-- Toggle to Sign Up -->
           <div class="mt-6 pt-6 border-t border-gray-200 text-center">
             <p class="text-sm text-gray-600 mb-3">Don't have an account?</p>
-            <button
-              type="button"
-              class="w-full border border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700 font-semibold py-2 px-4 rounded-lg transition-colors"
-              disabled
+            <router-link
+              to="/register"
+              class="w-full block border border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700 font-semibold py-2 px-4 rounded-lg transition-colors"
             >
               Sign Up
-            </button>
+            </router-link>
           </div>
-
-          <!-- Terms and Privacy -->
-          <p class="text-xs text-gray-500 text-center mt-6">
-            By logging in, you agree to our
-            <button class="text-green-600 hover:underline">Terms of Service</button> and
-            <button class="text-green-600 hover:underline">Privacy Policy</button>
-          </p>
         </div>
       </div>
     </div>

@@ -2,11 +2,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import MainLayout from '@/layouts/MainLayout.vue'
 import Login from '@/pages/Login.vue'
+import Register from '@/pages/Register.vue'
 import Dashboard from '@/pages/Dashboard.vue'
 import BodyComposition from '@/pages/BodyComposition.vue'
 import Recommendations from '@/pages/Recommendations.vue'
 import AITips from '@/pages/AITips.vue'
 import Trends from '@/pages/Trends.vue'
+import Settings from '@/pages/Settings.vue'
 
 const routes = [
   {
@@ -17,6 +19,12 @@ const routes = [
     path: '/login',
     name: 'login',
     component: Login,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: Register,
     meta: { requiresAuth: false }
   },
   {
@@ -52,6 +60,12 @@ const routes = [
         path: 'trends',
         name: 'trends',
         component: Trends,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: Settings,
         meta: { requiresAuth: true }
       }
     ]
