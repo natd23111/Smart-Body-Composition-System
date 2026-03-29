@@ -1,23 +1,61 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import MainLayout from '@/layouts/MainLayout.vue'
 import Login from '@/pages/Login.vue'
+import Dashboard from '@/pages/Dashboard.vue'
+import BodyComposition from '@/pages/BodyComposition.vue'
+import Recommendations from '@/pages/Recommendations.vue'
+import AITips from '@/pages/AITips.vue'
+import Trends from '@/pages/Trends.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login',
+    redirect: '/dashboard',
   },
   {
     path: '/login',
     name: 'login',
     component: Login,
+    meta: { requiresAuth: false }
   },
-  // Add more routes here as you build other pages
-  // {
-  //   path: '/dashboard',
-  //   name: 'dashboard',
-  //   component: Dashboard,
-  //   meta: { requiresAuth: true }
-  // }
+  {
+    path: '/',
+    component: MainLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'body-composition',
+        name: 'body-composition',
+        component: BodyComposition,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'recommendations',
+        name: 'recommendations',
+        component: Recommendations,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'ai-tips',
+        name: 'ai-tips',
+        component: AITips,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'trends',
+        name: 'trends',
+        component: Trends,
+        meta: { requiresAuth: true }
+      }
+    ]
+  }
 ]
 
 const router = createRouter({
@@ -27,13 +65,30 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('auth_token')
+  const authStore = useAuthStore()
 
-  // Redirect to login if accessing protected route without token
-  if (to.meta.requiresAuth && !token) {
+  // Initialize auth from localStorage on first load if not already loaded
+  if (authStore.user?.value === undefined || authStore.user.value === null) {
+    authStore.initAuth()
+  }
+
+  const isAuthenticated = authStore.isAuthenticated.value
+  const requiresAuth = to.meta.requiresAuth
+
+  console.log('Router guard:', {
+    path: to.path,
+    isAuthenticated,
+    requiresAuth,
+    user: authStore.user.value
+  })
+
+  // Redirect to login if accessing protected route without authentication
+  if (requiresAuth && !isAuthenticated) {
+    console.log('Redirecting to login - not authenticated')
     next('/login')
-  } else if (to.path === '/login' && token) {
+  } else if (to.path === '/login' && isAuthenticated) {
     // Redirect to dashboard if already logged in
+    console.log('Already authenticated, redirecting to dashboard')
     next('/dashboard')
   } else {
     next()

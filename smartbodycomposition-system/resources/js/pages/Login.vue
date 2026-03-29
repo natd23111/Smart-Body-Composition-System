@@ -190,9 +190,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService } from '@/services/api'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const form = ref({
   email: '',
@@ -222,13 +223,8 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    const response = await authService.login(form.value.email, form.value.password)
-
-    const { token, user } = response.data
-
-    // Store token and user data
-    localStorage.setItem('auth_token', token)
-    localStorage.setItem('user', JSON.stringify(user))
+    // Call auth store login (in production, replace with API call)
+    await authStore.login(form.value.email, form.value.password)
 
     success.value = 'Login successful! Redirecting...'
 
@@ -238,16 +234,7 @@ const handleLogin = async () => {
     }, 1000)
   } catch (err) {
     console.error('Login error:', err)
-
-    if (err.response?.status === 401) {
-      error.value = 'Invalid email or password'
-    } else if (err.response?.data?.message) {
-      error.value = err.response.data.message
-    } else {
-      error.value = 'An error occurred. Please try again.'
-    }
-
-    // Clear sensitive fields
+    error.value = 'An error occurred. Please try again.'
     form.value.password = ''
   } finally {
     loading.value = false
