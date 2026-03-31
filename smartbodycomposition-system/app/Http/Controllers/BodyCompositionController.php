@@ -22,7 +22,14 @@ class BodyCompositionController extends Controller
             'measurement_time' => 'nullable',
             'weight_kg' => 'nullable|numeric',
             'body_fat_percent' => 'nullable|numeric',
-            'muscle_mass' => 'nullable|numeric'
+            'body_fat_kg' => 'nullable|numeric',
+            'body_water_percent' => 'nullable|numeric',
+            'muscle_mass' => 'nullable|numeric',
+            'physical_rating' => 'nullable|numeric',
+            'bone_mass' => 'nullable|numeric',
+            'kcal' => 'nullable|numeric',
+            'bmr' => 'nullable|numeric',
+            'visceral_fat' => 'nullable|numeric',
         ]);
 
         $validated['user_id'] = auth()->id();
@@ -32,7 +39,7 @@ class BodyCompositionController extends Controller
         return response()->json([
             'message' => 'Record saved successfully',
             'data' => $record
-        ]);
+        ], 201);
     }
 
     // Show single record

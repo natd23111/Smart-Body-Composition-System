@@ -266,7 +266,6 @@ const form = ref({
   email: '',
   password: '',
   confirmPassword: '',
-  agreeTerms: false,
 })
 
 const loading = ref(false)
@@ -277,7 +276,7 @@ const showPassword = ref(false)
 const emailChecking = ref(false)
 const emailAvailable = ref(null)
 
-// Real-time email availability check
+// Real-time email availability check (better to use debounce in production)
 const checkEmailAvailability = async () => {
   if (!form.value.email || !isValidEmail(form.value.email)) {
     emailAvailable.value = null
@@ -319,9 +318,11 @@ const handleRegister = async () => {
     errors.value.email = 'Email is required'
   } else if (!isValidEmail(form.value.email)) {
     errors.value.email = 'Please enter a valid email'
-  } else if (!emailAvailable.value) {
-    errors.value.email = 'This email is already registered or still checking availability'
-  }
+  } else if (emailAvailable.value === false) {
+    errors.value.email = 'This email is already registered'
+    } else if (emailAvailable.value === null) {
+    errors.value.email = 'Please wait for email validation'
+    }
 
   if (!form.value.password) {
     errors.value.password = 'Password is required'
@@ -335,10 +336,6 @@ const handleRegister = async () => {
     errors.value.confirmPassword = 'Please confirm your password'
   } else if (form.value.password !== form.value.confirmPassword) {
     errors.value.confirmPassword = 'Passwords do not match'
-  }
-
-  if (!form.value.agreeTerms) {
-    errors.value.agreeTerms = 'You must agree to the terms and conditions'
   }
 
   // If there are errors, stop submission

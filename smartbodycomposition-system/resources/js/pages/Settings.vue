@@ -75,7 +75,9 @@
                 type="text"
                 placeholder="Enter your full name"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                :class="{ 'border-red-500 bg-red-50': personalErrors.fullName }"
               />
+              <p v-if="personalErrors.fullName" class="text-xs text-red-600">{{ personalErrors.fullName }}</p>
             </div>
 
             <!-- Email -->
@@ -86,15 +88,20 @@
                 type="email"
                 placeholder="Enter your email"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                :class="{ 'border-red-500 bg-red-50': personalErrors.email }"
               />
+              <p v-if="personalErrors.email" class="text-xs text-red-600">{{ personalErrors.email }}</p>
             </div>
 
-            <!-- Date of Birth -->
+            <!-- Age -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-900">Date of Birth</label>
+              <label class="block text-sm font-medium text-gray-900">Age</label>
               <input
-                v-model="personalInfo.dateOfBirth"
-                type="date"
+                v-model.number="personalInfo.age"
+                type="number"
+                min="1"
+                max="150"
+                placeholder="Enter your age"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
@@ -106,32 +113,11 @@
                 v-model="personalInfo.gender"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               >
+                <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
-            </div>
-
-            <!-- Phone -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-900">Phone Number</label>
-              <input
-                v-model="personalInfo.phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <!-- Location -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-900">Location</label>
-              <input
-                v-model="personalInfo.location"
-                type="text"
-                placeholder="Enter your location"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
             </div>
           </div>
         </div>
@@ -155,15 +141,18 @@
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter current password"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                :class="{ 'border-red-500 bg-red-50': passwordErrors.current }"
               />
               <button
                 @click="showPassword = !showPassword"
+                type="button"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
                 <svg v-if="!showPassword" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 <svg v-else class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
               </button>
             </div>
+            <p v-if="passwordErrors.current" class="text-xs text-red-600">{{ passwordErrors.current }}</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -174,7 +163,9 @@
                 type="password"
                 placeholder="Enter new password"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                :class="{ 'border-red-500 bg-red-50': passwordErrors.new }"
               />
+              <p v-if="passwordErrors.new" class="text-xs text-red-600">{{ passwordErrors.new }}</p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-medium text-gray-900">Confirm Password</label>
@@ -183,17 +174,77 @@
                 type="password"
                 placeholder="Confirm new password"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                :class="{ 'border-red-500 bg-red-50': passwordErrors.confirm }"
               />
+              <p v-if="passwordErrors.confirm" class="text-xs text-red-600">{{ passwordErrors.confirm }}</p>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Password Save Button -->
+      <div class="flex justify-end gap-4">
+        <button
+          @click="passwords.current = ''; passwords.new = ''; passwords.confirm = ''; passwordErrors = {}"
+          type="button"
+          class="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Clear
+        </button>
+        <button
+          @click="savePasswordChange"
+          :disabled="savingPassword"
+          class="px-6 py-2 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 disabled:bg-yellow-400 transition-colors flex items-center gap-2"
+        >
+          <svg v-if="savingPassword" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ savingPassword ? 'Saving...' : 'Change Password' }}
+        </button>
+      </div>
+
+      <!-- Alert Messages -->
+      <Transition name="fade">
+        <div v-if="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+          <svg class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <p class="text-green-800 text-sm">{{ successMessage }}</p>
+        </div>
+      </Transition>
+
+      <Transition name="fade">
+        <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <svg class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p class="text-red-800 text-sm">{{ errorMessage }}</p>
+        </div>
+      </Transition>
+
       <!-- Save Button -->
-      <div class="flex justify-end">
-        <button class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-          <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-          Save Changes
+      <div class="flex justify-end gap-4">
+        <button
+          @click="resetForm"
+          type="button"
+          class="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          @click="savePersonalInfo"
+          :disabled="savingPersonal"
+          class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors flex items-center gap-2"
+        >
+          <svg v-if="savingPersonal" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ savingPersonal ? 'Saving...' : 'Save Changes' }}
         </button>
       </div>
     </div>
@@ -374,7 +425,10 @@
 
       <!-- Save Button -->
       <div class="flex justify-end">
-        <button class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+        <button
+          @click="() => {}"
+          class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+        >
           <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
           Save Preferences
         </button>
@@ -384,19 +438,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import { getUserProfile, updateUserProfile, changePassword } from '@/services/authService'
 
-const activeTab = ref('personal');
-const showPassword = ref(false);
+const authStore = useAuthStore()
+
+const activeTab = ref('personal')
+const showPassword = ref(false)
+const savingPersonal = ref(false)
+const savingPassword = ref(false)
+const loadingProfile = ref(true)
+
+const successMessage = ref('')
+const errorMessage = ref('')
 
 const personalInfo = ref({
-  fullName: 'John Doe',
-  email: 'john.doe@example.com',
-  phone: '+60-1111333266',
-  dateOfBirth: '1990-05-15',
-  gender: 'Male',
-  location: 'Kuching, Sarawak',
-});
+  fullName: '',
+  email: '',
+  age: '',
+  gender: '',
+})
+
+const personalErrors = ref({})
+
+const passwords = ref({
+  current: '',
+  new: '',
+  confirm: '',
+})
+
+const passwordErrors = ref({})
 
 const systemPrefs = ref({
   weightUnit: 'kg',
@@ -406,11 +478,147 @@ const systemPrefs = ref({
   weeklyReport: true,
   goalReminders: true,
   language: 'English',
-});
+})
 
-const passwords = ref({
-  current: '',
-  new: '',
-  confirm: '',
-});
+// Load user profile on mount
+onMounted(async () => {
+  try {
+    const profile = await getUserProfile()
+    personalInfo.value = {
+      fullName: profile.name || '',
+      email: profile.email || '',
+      age: profile.age || '',
+      gender: profile.gender || '',
+    }
+  } catch (error) {
+    console.error('Failed to load profile:', error)
+    errorMessage.value = 'Failed to load your profile'
+  } finally {
+    loadingProfile.value = false
+  }
+})
+
+// Reset form to original values
+const resetForm = () => {
+  personalInfo.value = {
+    fullName: '',
+    email: '',
+    age: '',
+    gender: '',
+  }
+  passwords.value = {
+    current: '',
+    new: '',
+    confirm: '',
+  }
+  personalErrors.value = {}
+  passwordErrors.value = {}
+  successMessage.value = ''
+  errorMessage.value = ''
+}
+
+// Validate and save personal info
+const savePersonalInfo = async () => {
+  personalErrors.value = {}
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  // Validation
+  if (!personalInfo.value.fullName.trim()) {
+    personalErrors.value.fullName = 'Full name is required'
+  } else if (personalInfo.value.fullName.trim().length < 2) {
+    personalErrors.value.fullName = 'Full name must be at least 2 characters'
+  }
+
+  if (!personalInfo.value.email) {
+    personalErrors.value.email = 'Email is required'
+  } else if (!isValidEmail(personalInfo.value.email)) {
+    personalErrors.value.email = 'Please enter a valid email'
+  }
+
+  if (Object.keys(personalErrors.value).length > 0) {
+    return
+  }
+
+  savingPersonal.value = true
+
+  try {
+    const updated = await updateUserProfile({
+      fullName: personalInfo.value.fullName.trim(),
+      email: personalInfo.value.email.trim().toLowerCase(),
+      age: personalInfo.value.age,
+      gender: personalInfo.value.gender,
+    })
+
+    // Update auth store
+    authStore.user.value = {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      role: updated.role,
+    }
+
+    successMessage.value = 'Profile updated successfully!'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    errorMessage.value = error.message || 'Failed to update profile. Please try again.'
+  } finally {
+    savingPersonal.value = false
+  }
+}
+
+// Validate and change password
+const savePasswordChange = async () => {
+  passwordErrors.value = {}
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  // Validation
+  if (!passwords.value.current) {
+    passwordErrors.value.current = 'Current password is required'
+  }
+
+  if (!passwords.value.new) {
+    passwordErrors.value.new = 'New password is required'
+  } else if (passwords.value.new.length < 8) {
+    passwordErrors.value.new = 'Password must be at least 8 characters'
+  }
+
+  if (!passwords.value.confirm) {
+    passwordErrors.value.confirm = 'Please confirm your password'
+  } else if (passwords.value.new !== passwords.value.confirm) {
+    passwordErrors.value.confirm = 'Passwords do not match'
+  }
+
+  if (Object.keys(passwordErrors.value).length > 0) {
+    return
+  }
+
+  savingPassword.value = true
+
+  try {
+    await changePassword(passwords.value)
+    successMessage.value = 'Password changed successfully!'
+    passwords.value = {
+      current: '',
+      new: '',
+      confirm: '',
+    }
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    errorMessage.value = error.message || 'Failed to change password. Please try again.'
+  } finally {
+    savingPassword.value = false
+  }
+}
+
+// Validate email format
+const isValidEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(email)
+}
 </script>

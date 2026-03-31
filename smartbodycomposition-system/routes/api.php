@@ -71,6 +71,56 @@ Route::post('/logout', function (Request $request) {
     return response()->json(['message' => 'Logged out']);
 })->middleware('auth:sanctum');
 
+// User Profile Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/profile', function (Request $request) {
+        return response()->json($request->user());
+    });
+
+    Route::put('/user/profile', function (Request $request) {
+        $request->validate([
+            'name' => 'required|string|min:2',
+            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'age' => 'nullable|integer|min:1|max:150',
+            'gender' => 'nullable|in:Male,Female,Other',
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'age' => $request->age,
+            'gender' => $request->gender,
+        ]);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user,
+        ]);
+    });
+
+    Route::post('/user/change-password', function (Request $request) {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!password_verify($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Current password is incorrect'], 422);
+        }
+
+        $user->update([
+            'password' => bcrypt($request->new_password),
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully',
+        ]);
+    });
+});
+
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
 

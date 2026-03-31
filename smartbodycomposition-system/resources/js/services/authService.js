@@ -3,15 +3,25 @@
 
 const API_BASE_URL = '/api'
 
+const defaultHeaders = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'X-Requested-With': 'XMLHttpRequest',
+}
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('auth_token')
+
+  return token
+    ? { ...defaultHeaders, Authorization: `Bearer ${token}` }
+    : defaultHeaders
+}
+
 export async function registerUser(userData) {
   try {
     const response = await fetch(`${API_BASE_URL}/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      headers: defaultHeaders,
       body: JSON.stringify({
         name: userData.fullName,
         email: userData.email,
@@ -20,11 +30,20 @@ export async function registerUser(userData) {
       }),
     })
 
-    const data = await response.json()
+    let data
+        try {
+        data = await response.json()
+        } catch {
+        throw new Error('Invalid server response')
+        }
 
     if (!response.ok) {
-      throw new Error(data.error || data.message || 'Registration failed')
-    }
+        if (data.errors) {
+            const firstError = Object.values(data.errors)[0][0]
+            throw new Error(firstError)
+        }
+        throw new Error(data.message || 'Registration failed')
+        }
 
     // Store token and user data
     if (data.token) {
@@ -42,16 +61,17 @@ export async function verifyEmailAvailability(email) {
   try {
     const response = await fetch(`${API_BASE_URL}/check-email`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      headers: defaultHeaders,
       body: JSON.stringify({ email }),
     })
 
-    const data = await response.json()
-    return data.available
+    let data
+        try {
+        data = await response.json()
+        } catch {
+        throw new Error('Invalid server response')
+        }
+    return typeof data.available === 'boolean' ? data.available : true
   } catch (error) {
     console.error('Error checking email availability:', error)
     // Fallback to true if check fails (allow user to try)
@@ -63,22 +83,27 @@ export async function loginUser(email, password) {
   try {
     const response = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      headers: defaultHeaders,
       body: JSON.stringify({
         email,
         password,
       }),
     })
 
-    const data = await response.json()
+    let data
+        try {
+        data = await response.json()
+        } catch {
+        throw new Error('Invalid server response')
+        }
 
     if (!response.ok) {
-      throw new Error(data.error || 'Invalid email or password')
-    }
+        if (data.errors) {
+            const firstError = Object.values(data.errors)[0][0]
+            throw new Error(firstError)
+        }
+        throw new Error(data.message || 'Invalid email or password')
+        }
 
     // Store token and user data
     if (data.token) {
@@ -99,12 +124,7 @@ export async function logoutUser() {
     if (token) {
       const response = await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+        headers: getAuthHeaders(),
       })
 
       if (!response.ok) {
@@ -127,6 +147,96 @@ export async function logoutUser() {
 
 export function getAuthToken() {
   return localStorage.getItem('auth_token')
+}
+
+export async function getUserProfile() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch profile')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Failed to fetch profile. Please try again.')
+  }
+}
+
+export async function updateUserProfile(profileData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        name: profileData.fullName,
+        email: profileData.email,
+        age: profileData.age,
+        gender: profileData.gender,
+      }),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      if (data.errors) {
+        const firstError = Object.values(data.errors)[0][0]
+        throw new Error(firstError)
+      }
+      throw new Error(data.message || 'Update failed')
+    }
+
+    // Update local storage
+    localStorage.setItem('user', JSON.stringify(data.user))
+
+    return data.user
+  } catch (error) {
+    throw new Error(error.message || 'Profile update failed. Please try again.')
+  }
+}
+
+export async function changePassword(passwordData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/change-password`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        current_password: passwordData.current,
+        new_password: passwordData.new,
+        new_password_confirmation: passwordData.confirm,
+      }),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Password change failed')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Password change failed. Please try again.')
+  }
 }
 
 export function setAuthToken(token) {
