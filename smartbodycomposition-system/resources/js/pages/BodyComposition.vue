@@ -479,32 +479,32 @@ const paginatedMeasurements = computed(() => {
 const pageNumbers = computed(() => {
   const pages = []
   const maxPages = 5
-  
+
   if (totalPages.value <= maxPages) {
     for (let i = 1; i <= totalPages.value; i++) {
       pages.push(i)
     }
   } else {
     pages.push(1)
-    
+
     let startPage = Math.max(2, currentPage.value - 1)
     let endPage = Math.min(totalPages.value - 1, currentPage.value + 1)
-    
+
     if (startPage > 2) {
       pages.push('...')
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i)
     }
-    
+
     if (endPage < totalPages.value - 1) {
       pages.push('...')
     }
-    
+
     pages.push(totalPages.value)
   }
-  
+
   return pages
 })
 </script>
