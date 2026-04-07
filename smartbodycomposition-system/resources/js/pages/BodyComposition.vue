@@ -134,17 +134,21 @@
         <!-- Physical Rating and Visceral Fat -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-900 mb-2">Physical Rating</label>
+            <label class="block text-sm font-medium text-gray-900 mb-2">Physical Rating (1-9)</label>
             <select
-              v-model="form.physicalRating"
+              v-model.number="form.physicalRating"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
             >
-              <option value="">Select Rating</option>
-              <option value="1">Very Poor</option>
-              <option value="2">Poor</option>
-              <option value="3">Fair</option>
-              <option value="4">Good</option>
-              <option value="5">Excellent</option>
+              <option :value="null">Select Rating</option>
+              <option :value="1">1</option>
+              <option :value="2">2</option>
+              <option :value="3">3</option>
+              <option :value="4">4</option>
+              <option :value="5">5</option>
+              <option :value="6">6</option>
+              <option :value="7">7</option>
+              <option :value="8">8</option>
+              <option :value="9">9</option>
             </select>
           </div>
           <div>
@@ -209,8 +213,24 @@
 
     <!-- Measurement History -->
     <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Measurements</h3>
-      
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Recent Measurements</h3>
+        <div class="flex items-center gap-4" v-if="measurements.length > 0">
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-gray-700">Records per page:</label>
+            <select
+              v-model.number="perPage"
+              @change="currentPage = 1"
+              class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            >
+              <option :value="10">10</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div v-if="measurements.length === 0" class="text-center py-8">
         <p class="text-gray-600">No measurements recorded yet. Add one above to get started!</p>
       </div>
@@ -220,31 +240,88 @@
           <thead>
             <tr class="border-b border-gray-200">
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Time</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Weight (kg)</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Fat (%)</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Fat (kg)</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Muscle (kg)</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">BMR</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Bone Mass (kg)</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Water (%)</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Visceral Fat</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Calories (kcal)</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">BMR</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Physical Rating</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="measurement in measurements" :key="measurement.id" class="border-b border-gray-100 hover:bg-gray-50">
+            <tr v-for="measurement in paginatedMeasurements" :key="measurement.id" class="border-b border-gray-100 hover:bg-gray-50">
               <td class="px-4 py-3 text-sm text-gray-900">{{ formatDate(measurement.measurement_date) }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.measurement_time || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.weight_kg?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_fat_percent?.toFixed(1) || '-' }}%</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_fat_kg?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.muscle_mass?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bmr ? measurement.bmr.toFixed(0) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bone_mass?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_water_percent?.toFixed(1) || '-' }}%</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.visceral_fat?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.kcal || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bmr ? measurement.bmr.toFixed(0) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ getRatingLabel(measurement.physical_rating) || '-' }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="measurements.length > 0" class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing {{ startIndex + 1 }} to {{ Math.min(endIndex, measurements.length) }} of {{ measurements.length }} records
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <div class="flex items-center gap-1">
+            <span v-for="page in pageNumbers" :key="page" class="inline-block">
+              <button
+                v-if="page === '...'"
+                disabled
+                class="px-2 py-1 text-gray-500 cursor-default"
+              >
+                ...
+              </button>
+              <button
+                v-else
+                @click="currentPage = page"
+                :class="{
+                  'px-3 py-1 bg-green-600 text-white rounded-lg': currentPage === page,
+                  'px-3 py-1 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50': currentPage !== page,
+                }"
+                class="transition-colors"
+              >
+                {{ page }}
+              </button>
+            </span>
+          </div>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 const form = ref({
   measurementDate: new Date().toISOString().split('T')[0],
@@ -254,7 +331,7 @@ const form = ref({
   bodyFatKg: null,
   bodyWaterPercent: null,
   muscleMass: null,
-  physicalRating: '',
+  physicalRating: null,
   boneMass: null,
   kcal: null,
   bmr: null,
@@ -266,6 +343,8 @@ const loading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 const errors = ref({})
+const currentPage = ref(1)
+const perPage = ref(10)
 
 // Load measurements on mount
 onMounted(async () => {
@@ -360,7 +439,7 @@ const resetForm = () => {
     bodyFatKg: null,
     bodyWaterPercent: null,
     muscleMass: null,
-    physicalRating: '',
+    physicalRating: null,
     boneMass: null,
     kcal: null,
     bmr: null,
@@ -377,6 +456,57 @@ const formatDate = (dateString) => {
     day: 'numeric',
   })
 }
+
+// Get rating label from value
+const getRatingLabel = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+  return value
+}
+
+// Pagination computed properties
+const totalPages = computed(() => Math.ceil(measurements.value.length / perPage.value))
+
+const startIndex = computed(() => (currentPage.value - 1) * perPage.value)
+
+const endIndex = computed(() => startIndex.value + perPage.value)
+
+const paginatedMeasurements = computed(() => {
+  return measurements.value.slice(startIndex.value, endIndex.value)
+})
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const maxPages = 5
+  
+  if (totalPages.value <= maxPages) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    pages.push(1)
+    
+    let startPage = Math.max(2, currentPage.value - 1)
+    let endPage = Math.min(totalPages.value - 1, currentPage.value + 1)
+    
+    if (startPage > 2) {
+      pages.push('...')
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+    
+    if (endPage < totalPages.value - 1) {
+      pages.push('...')
+    }
+    
+    pages.push(totalPages.value)
+  }
+  
+  return pages
+})
 </script>
 
 <style scoped>

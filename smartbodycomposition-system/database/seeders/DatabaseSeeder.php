@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\BodyComposition;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +15,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // This seeder is designed to be run with a specific user ID
+        // Usage: php artisan db:seed --class=DatabaseSeeder --user=1
+        // Or create records for a specific user programmatically
+    }
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+    /**
+     * Create body composition records for a specific user.
+     * Usage in routes or commands:
+     *
+     * app(DatabaseSeeder::class)->seedBodyCompositionsForUser($userId, $count);
+     */
+    public function seedBodyCompositionsForUser($userId, $count = 10)
+    {
+        BodyComposition::factory()
+            ->count($count)
+            ->forUser(\App\Models\User::find($userId))
+            ->create();
     }
 }
