@@ -172,30 +172,7 @@
           </div>
         </div>
 
-        <!-- BMI Trend Chart -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 p-6">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-blue-100 rounded-lg">
-                <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-              </div>
-              <div>
-                <h3 class="font-bold text-gray-900">BMI Trend</h3>
-                <p class="text-sm text-gray-600">Body Mass Index progression</p>
-              </div>
-            </div>
-          </div>
-          <div class="p-6">
-            <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
-              <div class="text-center">
-                <p class="text-gray-500 text-sm">📊 Chart will display here</p>
-                <p class="text-gray-400 text-xs mt-2">(Install chart library for visualization)</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- BMI Trend Chart removed as per user request -->
 
         <!-- Muscle Mass Trend -->
         <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
@@ -544,11 +521,8 @@ const weightChangePercent = computed(() => {
   return ((weightChange.value / previousData.value.weight_kg) * 100).toFixed(1)
 })
 
-const bmiChange = computed(() => {
-  const curr = currentData.value.bmi
-  const prev = previousData.value.bmi
-  return parseFloat((curr - prev).toFixed(2))
-})
+
+// ...existing code...
 
 const bodyFatChange = computed(() => {
   const curr = currentData.value.body_fat_percent

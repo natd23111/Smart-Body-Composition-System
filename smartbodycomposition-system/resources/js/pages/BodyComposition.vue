@@ -360,7 +360,11 @@ const loadMeasurements = async () => {
       },
     })
     const data = await response.json()
-    measurements.value = data.data || data || []
+    // Sort by latest measurement_date descending
+    const sorted = (data.data || data || []).slice().sort((a, b) => {
+      return new Date(b.measurement_date) - new Date(a.measurement_date)
+    })
+    measurements.value = sorted
   } catch (error) {
     console.error('Failed to load measurements:', error)
   }

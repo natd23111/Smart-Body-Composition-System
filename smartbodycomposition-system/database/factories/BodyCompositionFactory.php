@@ -18,24 +18,56 @@ class BodyCompositionFactory extends Factory
      */
     public function definition(): array
     {
-        $weight = $this->faker->randomFloat(1, 50, 150);
-        $bodyFatPercent = $this->faker->randomFloat(1, 10, 40);
-        $bodyWaterPercent = $this->faker->randomFloat(1, 45, 75);
-
+        // 30-day realistic dataset for a single user
+        static $day = 0;
+        $dataset = [
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1350, 18, 1.0],
+            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1352, 18, 1.0],
+            [52.9, 9.3, 4.92, 59.5, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [53.0, 9.4, 4.98, 59.4, 45.5, 7, 2.5, 1353, 18, 1.0],
+            [52.7, 9.2, 4.85, 59.8, 45.2, 7, 2.5, 1349, 18, 1.0],
+            [52.8, 9.3, 4.90, 59.6, 45.3, 7, 2.5, 1350, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.7, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [53.1, 9.4, 4.98, 59.5, 45.6, 7, 2.5, 1354, 18, 1.0],
+            [53.0, 9.3, 4.93, 59.6, 45.5, 7, 2.5, 1352, 18, 1.0],
+            [52.8, 9.2, 4.86, 59.8, 45.3, 7, 2.5, 1350, 18, 1.0],
+            [52.7, 9.1, 4.80, 59.9, 45.2, 7, 2.5, 1348, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.7, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
+            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
+            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
+            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
+            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
+            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
+            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
+            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
+        ];
+        $entry = $dataset[$day % 30];
+        $day++;
         return [
             'user_id' => User::factory(),
-            'measurement_date' => $this->faker->dateTimeBetween('-6 months', 'now'),
-            'measurement_time' => $this->faker->optional(0.7)->time('H:i'),
-            'weight_kg' => $weight,
-            'body_fat_percent' => $bodyFatPercent,
-            'body_fat_kg' => round($weight * ($bodyFatPercent / 100), 1),
-            'body_water_percent' => $bodyWaterPercent,
-            'muscle_mass' => round($weight * (1 - ($bodyFatPercent / 100)), 1),
-            'bone_mass' => $this->faker->randomFloat(1, 2.5, 4.5),
-            'visceral_fat' => $this->faker->randomFloat(1, 2, 15),
-            'kcal' => $this->faker->numberBetween(1400, 2500),
-            'bmr' => $this->faker->numberBetween(1200, 2200),
-            'physical_rating' => $this->faker->numberBetween(1, 9),
+            'measurement_date' => now()->subDays(30 - $day),
+            'measurement_time' => '08:00',
+            'weight_kg' => $entry[0],
+            'body_fat_percent' => $entry[1],
+            'body_fat_kg' => $entry[2],
+            'body_water_percent' => $entry[3],
+            'muscle_mass' => $entry[4],
+            'physical_rating' => $entry[5],
+            'bone_mass' => $entry[6],
+            'kcal' => $entry[7],
+            'bmr' => $entry[8],
+            'visceral_fat' => $entry[9],
         ];
     }
 

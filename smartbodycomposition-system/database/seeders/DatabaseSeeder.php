@@ -15,9 +15,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // This seeder is designed to be run with a specific user ID
-        // Usage: php artisan db:seed --class=DatabaseSeeder --user=1
-        // Or create records for a specific user programmatically
+        // Generate 30 days of body composition data for user ID 3
+        $this->seedBodyCompositionsForUser(3, 30);
     }
 
     /**

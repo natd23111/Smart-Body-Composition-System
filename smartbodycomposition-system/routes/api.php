@@ -78,11 +78,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::put('/user/profile', function (Request $request) {
+
         $request->validate([
             'name' => 'required|string|min:2',
             'email' => 'required|email|unique:users,email,' . $request->user()->id,
             'age' => 'nullable|integer|min:1|max:150',
             'gender' => 'nullable|in:Male,Female,Other',
+            'height_cm' => 'nullable|numeric|min:50|max:250',
         ]);
 
         $user = $request->user();
@@ -91,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'email' => $request->email,
             'age' => $request->age,
             'gender' => $request->gender,
+            'height_cm' => $request->height_cm,
         ]);
 
         return response()->json([

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'role',
         'age',
         'gender',
+        'height_cm',
     ];
 
     /**

@@ -183,6 +183,7 @@ export async function updateUserProfile(profileData) {
         email: profileData.email,
         age: profileData.age,
         gender: profileData.gender,
+        height_cm: profileData.height_cm,
       }),
     })
 

@@ -119,6 +119,20 @@
                 <option value="Other">Other</option>
               </select>
             </div>
+
+            <!-- Height -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-900">Height (cm)</label>
+              <input
+                v-model.number="personalInfo.height_cm"
+                type="number"
+                min="50"
+                max="250"
+                step="1"
+                placeholder="Enter your height in centimeters"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -458,6 +472,7 @@ const personalInfo = ref({
   email: '',
   age: '',
   gender: '',
+  height_cm: '',
 })
 
 const personalErrors = ref({})
@@ -489,6 +504,7 @@ onMounted(async () => {
       email: profile.email || '',
       age: profile.age || '',
       gender: profile.gender || '',
+      height_cm: profile.height_cm || '',
     }
   } catch (error) {
     console.error('Failed to load profile:', error)
@@ -548,6 +564,7 @@ const savePersonalInfo = async () => {
       email: personalInfo.value.email.trim().toLowerCase(),
       age: personalInfo.value.age,
       gender: personalInfo.value.gender,
+      height_cm: personalInfo.value.height_cm,
     })
 
     // Update auth store
