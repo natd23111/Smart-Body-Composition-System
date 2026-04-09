@@ -61,7 +61,6 @@
                   id="email"
                   v-model="form.email"
                   type="email"
-                  required
                   placeholder="john@example.com"
                   class="pl-10 w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition"
                   :class="{ 'border-red-500 bg-red-50': errors.email }"
@@ -90,7 +89,6 @@
                   id="password"
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
-                  required
                   placeholder="••••••••"
                   class="pl-10 pr-10 w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition"
                   :class="{ 'border-red-500 bg-red-50': errors.password }"
@@ -165,7 +163,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authPiniaStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -188,12 +186,26 @@ const handleLogin = async () => {
   success.value = ''
   errors.value = {}
 
-  // Basic validation
-  if (!form.value.email || !form.value.password) {
-    errors.value.email = form.value.email ? '' : 'Email is required'
-    errors.value.password = form.value.password ? '' : 'Password is required'
-    return
+
+  // Client-side validation
+  let valid = true
+  // Email required and format
+  if (!form.value.email) {
+    errors.value.email = 'Email is required'
+    valid = false
+  } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.value.email)) {
+    errors.value.email = 'Invalid email format'
+    valid = false
   }
+  // Password required and min length
+  if (!form.value.password) {
+    errors.value.password = 'Password is required'
+    valid = false
+  } else if (form.value.password.length < 8) {
+    errors.value.password = 'Password must be at least 8 characters'
+    valid = false
+  }
+  if (!valid) return
 
   loading.value = true
 
@@ -209,7 +221,19 @@ const handleLogin = async () => {
     }, 1000)
   } catch (err) {
     console.error('Login error:', err)
-    error.value = 'An error occurred. Please try again.'
+    // Show more specific error messages
+    if (err && err.message) {
+      if (
+        err.message.toLowerCase().includes('invalid credentials') ||
+        err.message.toLowerCase().includes('invalid email or password')
+      ) {
+        error.value = 'Invalid email or password.'
+      } else {
+        error.value = err.message
+      }
+    } else {
+      error.value = 'An error occurred. Please try again.'
+    }
     form.value.password = ''
   } finally {
     loading.value = false

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authPiniaStore'
 import MainLayout from '@/layouts/MainLayout.vue'
 import Login from '@/pages/Login.vue'
 import Register from '@/pages/Register.vue'
@@ -82,18 +82,19 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   // Initialize auth from localStorage on first load if not already loaded
-  if (authStore.user?.value === undefined || authStore.user.value === null) {
+
+  if (authStore.user === undefined || authStore.user === null) {
     authStore.initAuth()
   }
 
-  const isAuthenticated = authStore.isAuthenticated.value
+  const isAuthenticated = authStore.isAuthenticated
   const requiresAuth = to.meta.requiresAuth
 
   console.log('Router guard:', {
     path: to.path,
     isAuthenticated,
     requiresAuth,
-    user: authStore.user.value
+    user: authStore.user
   })
 
   // Redirect to login if accessing protected route without authentication

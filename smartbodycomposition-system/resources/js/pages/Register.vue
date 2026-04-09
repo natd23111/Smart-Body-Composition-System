@@ -255,7 +255,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authPiniaStore'
 import { registerUser, verifyEmailAvailability } from '@/services/authService'
 
 const router = useRouter()

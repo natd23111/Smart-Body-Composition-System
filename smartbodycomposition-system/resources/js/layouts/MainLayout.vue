@@ -146,7 +146,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '../stores/authPiniaStore'
 
 const router = useRouter()
 const route = useRoute()

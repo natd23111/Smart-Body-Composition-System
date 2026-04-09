@@ -439,7 +439,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from '@/stores/authPiniaStore'
 import { getUserProfile, updateUserProfile, changePassword } from '@/services/authService'
 
 const authStore = useAuthStore()

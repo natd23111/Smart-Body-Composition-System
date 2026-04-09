@@ -49,7 +49,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ currentData.weight }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ currentData.weight_kg || '-' }}</span>
               <span class="text-gray-500 text-sm">kg</span>
             </div>
             <div class="flex items-center gap-2">
@@ -76,7 +76,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ currentData.bmi }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ (currentData.bmi || 0).toFixed(1) }}</span>
               <span class="text-gray-500 text-sm">kg/m²</span>
             </div>
             <span :class="[
@@ -101,7 +101,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ currentData.bodyFat }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ (currentData.body_fat_percent || 0).toFixed(1) }}</span>
               <span class="text-gray-500 text-sm">%</span>
             </div>
             <div class="flex items-center gap-2">
@@ -132,7 +132,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ currentData.muscleMass }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ (currentData.muscle_mass || 0).toFixed(1) }}</span>
               <span class="text-gray-500 text-sm">kg</span>
             </div>
             <div class="flex items-center gap-2">
@@ -271,7 +271,7 @@
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
                 <div :class="bmiZone.barColor + ' h-2 rounded-full transition-all duration-300'"
-                  :style="{ width: `${Math.min((currentData.bmi / 30) * 100, 100)}%` }">
+                  :style="{ width: `${Math.min(((currentData.bmi || 0) / 30) * 100, 100)}%` }">
                 </div>
               </div>
               <div class="flex justify-between text-xs text-gray-600">
@@ -301,8 +301,8 @@
                 </div>
                 <div
                   class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-gray-800 rounded-full shadow-md transition-all"
-                  :style="{ left: `calc(${Math.min((currentData.bodyFat / 30) * 100, 100)}% - 8px)` }"
-                  :title="`${currentData.bodyFat}%`"
+                  :style="{ left: `calc(${Math.min(((currentData.body_fat_percent || 0) / 30) * 100, 100)}% - 8px)` }"
+                  :title="`${(currentData.body_fat_percent || 0).toFixed(1)}%`"
                 ></div>
               </div>
               <div class="flex justify-between text-xs text-gray-600">
@@ -388,17 +388,17 @@
                   <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                      <th class="text-left py-3 px-4 font-semibold text-gray-700">Weight</th>
-                      <th class="text-left py-3 px-4 font-semibold text-gray-700">BMI</th>
+                      <th class="text-left py-3 px-4 font-semibold text-gray-700">Weight (kg)</th>
                       <th class="text-left py-3 px-4 font-semibold text-gray-700">Body Fat %</th>
+                      <th class="text-left py-3 px-4 font-semibold text-gray-700">Muscle Mass</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="record in filteredRecords.slice(0, 5)" :key="record.id" class="border-b border-gray-200 hover:bg-gray-50">
-                      <td class="py-3 px-4">{{ record.date }}</td>
-                      <td class="py-3 px-4">{{ record.weight }} kg</td>
-                      <td class="py-3 px-4">{{ record.bmi }}</td>
-                      <td class="py-3 px-4">{{ record.bodyFat }}%</td>
+                      <td class="py-3 px-4">{{ record.measurement_date }}</td>
+                      <td class="py-3 px-4">{{ record.weight_kg?.toFixed(1) || '-' }} kg</td>
+                      <td class="py-3 px-4">{{ record.body_fat_percent?.toFixed(1) || '-' }}%</td>
+                      <td class="py-3 px-4">{{ record.muscle_mass?.toFixed(1) || '-' }} kg</td>
                     </tr>
                   </tbody>
                 </table>
@@ -478,68 +478,70 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const timeRange = ref('1M')
-const startDate = ref('2025-01-10')
-const endDate = ref('2025-01-15')
-
-// Data for different time ranges
-const dataByRange = {
-  '1W': [
-    { date: 'Mon', weight: 72.8, bmi: 23.5, bodyFat: 18.2, muscleMass: 54.0 },
-    { date: 'Tue', weight: 72.7, bmi: 23.4, bodyFat: 18.1, muscleMass: 54.1 },
-    { date: 'Wed', weight: 72.6, bmi: 23.4, bodyFat: 18.0, muscleMass: 54.2 },
-    { date: 'Thu', weight: 72.5, bmi: 23.3, bodyFat: 17.9, muscleMass: 54.2 },
-    { date: 'Fri', weight: 72.5, bmi: 23.3, bodyFat: 17.9, muscleMass: 54.3 },
-    { date: 'Sat', weight: 72.4, bmi: 23.3, bodyFat: 17.8, muscleMass: 54.3 },
-    { date: 'Sun', weight: 72.3, bmi: 23.2, bodyFat: 17.8, muscleMass: 54.4 },
-  ],
-  '1M': [
-    { date: 'Week 1', weight: 75.0, bmi: 24.1, bodyFat: 19.5, muscleMass: 53.0 },
-    { date: 'Week 2', weight: 74.2, bmi: 23.9, bodyFat: 19.0, muscleMass: 53.5 },
-    { date: 'Week 3', weight: 73.5, bmi: 23.6, bodyFat: 18.5, muscleMass: 53.8 },
-    { date: 'Week 4', weight: 72.3, bmi: 23.2, bodyFat: 17.8, muscleMass: 54.4 },
-  ],
-  '3M': [
-    { date: 'Oct', weight: 78.0, bmi: 25.1, bodyFat: 21.5, muscleMass: 51.5 },
-    { date: 'Nov', weight: 76.0, bmi: 24.5, bodyFat: 20.2, muscleMass: 52.5 },
-    { date: 'Dec', weight: 74.0, bmi: 23.8, bodyFat: 19.0, muscleMass: 53.5 },
-    { date: 'Jan', weight: 72.3, bmi: 23.2, bodyFat: 17.8, muscleMass: 54.4 },
-  ],
-  '6M': [
-    { date: 'Aug', weight: 82.0, bmi: 26.4, bodyFat: 24.0, muscleMass: 50.0 },
-    { date: 'Sep', weight: 80.0, bmi: 25.7, bodyFat: 22.8, muscleMass: 51.0 },
-    { date: 'Oct', weight: 78.0, bmi: 25.1, bodyFat: 21.5, muscleMass: 51.5 },
-    { date: 'Nov', weight: 76.0, bmi: 24.5, bodyFat: 20.2, muscleMass: 52.5 },
-    { date: 'Dec', weight: 74.0, bmi: 23.8, bodyFat: 19.0, muscleMass: 53.5 },
-    { date: 'Jan', weight: 72.3, bmi: 23.2, bodyFat: 17.8, muscleMass: 54.4 },
-  ],
-}
-
-// Mock body composition records
-const bodyCompositionRecords = [
-  { id: 1, date: '2025-01-15', weight: 72.3, bmi: 23.2, bodyFat: 17.8, muscleMass: 54.4, visceralFat: 8.0 },
-  { id: 2, date: '2025-01-14', weight: 72.5, bmi: 23.3, bodyFat: 17.9, muscleMass: 54.3, visceralFat: 8.2 },
-  { id: 3, date: '2025-01-13', weight: 72.6, bmi: 23.4, bodyFat: 18.0, muscleMass: 54.2, visceralFat: 8.3 },
-  { id: 4, date: '2025-01-12', weight: 72.8, bmi: 23.5, bodyFat: 18.2, muscleMass: 54.0, visceralFat: 8.5 },
-  { id: 5, date: '2025-01-11', weight: 73.0, bmi: 23.6, bodyFat: 18.3, muscleMass: 53.9, visceralFat: 8.6 },
-  { id: 6, date: '2025-01-10', weight: 73.1, bmi: 23.7, bodyFat: 18.4, muscleMass: 53.8, visceralFat: 8.7 },
-]
+const startDate = ref('')
+const endDate = ref('')
+const measurements = ref([])
+const loading = ref(true)
 
 // Computed properties
-const data = computed(() => dataByRange[timeRange.value])
-const currentData = computed(() => data.value[data.value.length - 1])
-const previousData = computed(() => data.value[0])
+const data = computed(() => {
+  const currentDate = new Date()
+  let startDateObj
+
+  switch (timeRange.value) {
+    case '1W':
+      startDateObj = new Date(currentDate)
+      startDateObj.setDate(currentDate.getDate() - 7)
+      break
+    case '1M':
+      startDateObj = new Date(currentDate)
+      startDateObj.setMonth(currentDate.getMonth() - 1)
+      break
+    case '3M':
+      startDateObj = new Date(currentDate)
+      startDateObj.setMonth(currentDate.getMonth() - 3)
+      break
+    case '6M':
+      startDateObj = new Date(currentDate)
+      startDateObj.setMonth(currentDate.getMonth() - 6)
+      break
+    default:
+      startDateObj = new Date(currentDate)
+      startDateObj.setMonth(currentDate.getMonth() - 1)
+  }
+
+  return measurements.value.filter(m => {
+    const measurementDate = new Date(m.measurement_date)
+    return measurementDate >= startDateObj && measurementDate <= currentDate
+  }).sort((a, b) => new Date(a.measurement_date) - new Date(b.measurement_date))
+})
+
+const currentData = computed(() => {
+  if (data.value.length === 0) {
+    return { weight_kg: 0, body_fat_percent: 0, muscle_mass: 0, bmi: 0 }
+  }
+  return data.value[data.value.length - 1]
+})
+
+const previousData = computed(() => {
+  if (data.value.length === 0) {
+    return { weight_kg: 0, body_fat_percent: 0, muscle_mass: 0, bmi: 0 }
+  }
+  return data.value[0]
+})
 
 const weightChange = computed(() => {
-  const curr = currentData.value.weight
-  const prev = previousData.value.weight
+  const curr = currentData.value.weight_kg
+  const prev = previousData.value.weight_kg
   return parseFloat((curr - prev).toFixed(2))
 })
 
 const weightChangePercent = computed(() => {
-  return ((weightChange.value / previousData.value.weight) * 100).toFixed(1)
+  if (previousData.value.weight_kg === 0) return 0
+  return ((weightChange.value / previousData.value.weight_kg) * 100).toFixed(1)
 })
 
 const bmiChange = computed(() => {
@@ -549,14 +551,14 @@ const bmiChange = computed(() => {
 })
 
 const bodyFatChange = computed(() => {
-  const curr = currentData.value.bodyFat
-  const prev = previousData.value.bodyFat
+  const curr = currentData.value.body_fat_percent
+  const prev = previousData.value.body_fat_percent
   return parseFloat((curr - prev).toFixed(2))
 })
 
 const muscleMassChange = computed(() => {
-  const curr = currentData.value.muscleMass
-  const prev = previousData.value.muscleMass
+  const curr = currentData.value.muscle_mass
+  const prev = previousData.value.muscle_mass
   return parseFloat((curr - prev).toFixed(2))
 })
 
@@ -574,13 +576,60 @@ const getBodyFatZone = (bodyFat) => {
   return { label: 'Average', badgeColor: 'bg-yellow-600' }
 }
 
-const bmiZone = computed(() => getBMIZone(currentData.value.bmi))
-const bodyFatZone = computed(() => getBodyFatZone(currentData.value.bodyFat))
+const bmiZone = computed(() => getBMIZone(currentData.value.bmi || 0))
+const bodyFatZone = computed(() => getBodyFatZone(currentData.value.body_fat_percent || 0))
 
 const filteredRecords = computed(() => {
-  return bodyCompositionRecords.filter(record => {
-    return record.date >= startDate.value && record.date <= endDate.value
+  if (!startDate.value || !endDate.value) return measurements.value
+  return measurements.value.filter(record => {
+    return record.measurement_date >= startDate.value && record.measurement_date <= endDate.value
   })
+})
+
+// Methods
+const loadMeasurements = async () => {
+  try {
+    loading.value = true
+    const response = await fetch('/api/body-compositions', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    })
+    const result = await response.json()
+    measurements.value = (result.data || result || []).sort((a, b) =>
+      new Date(a.measurement_date) - new Date(b.measurement_date)
+    )
+
+    // Set default date range to 6 months from oldest record
+    if (measurements.value.length > 0) {
+      const oldestDate = new Date(measurements.value[0].measurement_date)
+      const today = new Date()
+
+      endDate.value = today.toISOString().split('T')[0]
+      startDate.value = oldestDate.toISOString().split('T')[0]
+    } else {
+      // Default to 6 months if no data
+      const today = new Date()
+      endDate.value = today.toISOString().split('T')[0]
+      const sixMonthsAgo = new Date(today)
+      sixMonthsAgo.setMonth(today.getMonth() - 6)
+      startDate.value = sixMonthsAgo.toISOString().split('T')[0]
+    }
+  } catch (error) {
+    console.error('Failed to load measurements:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Load on mount
+onMounted(() => {
+  loadMeasurements()
+})
+
+// Watch for time range changes
+watch(() => timeRange.value, () => {
+  // Data will be filtered automatically by computed property
 })
 
 // Methods
@@ -598,19 +647,22 @@ const handleExport = (format) => {
 }
 
 const exportAsCSV = (records) => {
-  const headers = ['Date', 'Weight (kg)', 'BMI (kg/m²)', 'Body Fat (%)', 'Muscle Mass (kg)', 'Visceral Fat']
+  const headers = ['Date', 'Weight (kg)', 'Body Fat (%)', 'Muscle Mass (kg)', 'Bone Mass (kg)', 'Water (%)', 'Visceral Fat', 'BMR', 'Physical Rating']
   const rows = records.map(record => [
-    record.date,
-    record.weight,
-    record.bmi,
-    record.bodyFat,
-    record.muscleMass,
-    record.visceralFat
+    record.measurement_date,
+    record.weight_kg?.toFixed(1) || '-',
+    record.body_fat_percent?.toFixed(1) || '-',
+    record.muscle_mass?.toFixed(1) || '-',
+    record.bone_mass?.toFixed(1) || '-',
+    record.body_water_percent?.toFixed(1) || '-',
+    record.visceral_fat?.toFixed(1) || '-',
+    record.bmr || '-',
+    record.physical_rating || '-'
   ])
 
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.join(','))
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -651,21 +703,27 @@ const exportAsPDF = (records) => {
           <tr>
             <th>Date</th>
             <th>Weight (kg)</th>
-            <th>BMI (kg/m²)</th>
             <th>Body Fat (%)</th>
             <th>Muscle Mass (kg)</th>
+            <th>Bone Mass (kg)</th>
+            <th>Water (%)</th>
             <th>Visceral Fat</th>
+            <th>BMR</th>
+            <th>Physical Rating</th>
           </tr>
         </thead>
         <tbody>
           ${records.map(record => `
             <tr>
-              <td>${record.date}</td>
-              <td>${record.weight}</td>
-              <td>${record.bmi}</td>
-              <td>${record.bodyFat}</td>
-              <td>${record.muscleMass}</td>
-              <td>${record.visceralFat}</td>
+              <td>${record.measurement_date}</td>
+              <td>${record.weight_kg?.toFixed(1) || '-'}</td>
+              <td>${record.body_fat_percent?.toFixed(1) || '-'}</td>
+              <td>${record.muscle_mass?.toFixed(1) || '-'}</td>
+              <td>${record.bone_mass?.toFixed(1) || '-'}</td>
+              <td>${record.body_water_percent?.toFixed(1) || '-'}</td>
+              <td>${record.visceral_fat?.toFixed(1) || '-'}</td>
+              <td>${record.bmr || '-'}</td>
+              <td>${record.physical_rating || '-'}</td>
             </tr>
           `).join('')}
         </tbody>

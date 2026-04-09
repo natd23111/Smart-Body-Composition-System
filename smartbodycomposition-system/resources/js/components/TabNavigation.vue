@@ -49,7 +49,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '../stores/authPiniaStore'
 
 const route = useRoute()
 const authStore = useAuthStore()
