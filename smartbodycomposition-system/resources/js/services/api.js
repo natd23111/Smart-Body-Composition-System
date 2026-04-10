@@ -68,8 +68,11 @@ export const healthRecommendationService = {
     api.get('/recommendations', { params }),
 
   // Generate new recommendations based on body composition
-  generate: (bodyCompositionData) =>
-    api.post('/recommendations/generate', bodyCompositionData),
+  generate: () =>
+    api.post('/recommendations/generate'),
+
+  updateStatus: (id, status) =>
+    api.put(`/recommendations/${id}/status`, { status }),
 };
 
 // ==================== ADMIN ENDPOINTS ====================

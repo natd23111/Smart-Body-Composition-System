@@ -133,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Recommendations
     Route::get('recommendations', [HealthRecommendationController::class, 'index']);
     Route::post('recommendations/generate', [HealthRecommendationController::class, 'generate']);
+    Route::put('recommendations/{recommendation}/status', [HealthRecommendationController::class, 'updateStatus']);
 });
 
 // Admin Routes (admin-only)

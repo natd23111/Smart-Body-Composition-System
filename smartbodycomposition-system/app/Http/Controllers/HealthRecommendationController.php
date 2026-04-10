@@ -4,51 +4,39 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\HealthRecommendation;
-use App\Models\BodyComposition;
+use App\Services\RecommendationEngine;
 
 class HealthRecommendationController extends Controller
 {
-    // Get recommendations for user
-    public function index()
+    public function __construct(private RecommendationEngine $recommendationEngine)
     {
-        $data = HealthRecommendation::where('user_id', auth()->id())->latest()->get();
-        return response()->json($data);
     }
 
-    // Generate recommendation (your AI logic)
-    public function generate()
+    public function index(Request $request)
     {
-        $latest = BodyComposition::where('user_id', auth()->id())->latest()->first();
+        return response()->json($this->recommendationEngine->syncForUser($request->user()));
+    }
 
-        if (!$latest) {
-            return response()->json(['message' => 'No data available']);
-        }
+    public function generate(Request $request)
+    {
+        return response()->json($this->recommendationEngine->syncForUser($request->user()));
+    }
 
-        $recommendation = $this->generateRecommendation($latest);
-
-        $saved = HealthRecommendation::create([
-            'user_id' => auth()->id(),
-            'recommendation_text' => $recommendation
+    public function updateStatus(Request $request, HealthRecommendation $recommendation)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,in-progress,completed',
         ]);
 
-        return response()->json($saved);
-    }
+        $updated = $this->recommendationEngine->updateStatus(
+            $request->user(),
+            $recommendation,
+            $validated['status']
+        );
 
-    // RULE-BASED AI ENGINE
-    private function generateRecommendation($data)
-    {
-        if ($data->body_fat_percent > 25) {
-            return "Reduce calorie intake and increase cardio exercise.";
-        }
-
-        if ($data->muscle_mass < 40) {
-            return "Increase protein intake and strength training.";
-        }
-
-        if ($data->body_water_percent < 50) {
-            return "Increase water intake.";
-        }
-
-        return "Your body composition is within a healthy range.";
+        return response()->json([
+            'message' => 'Recommendation progress updated successfully',
+            'data' => $updated,
+        ]);
     }
 }
