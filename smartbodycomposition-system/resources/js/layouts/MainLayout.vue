@@ -144,9 +144,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authPiniaStore'
+import { getUserProfile } from '../services/authService'
 
 const router = useRouter()
 const route = useRoute()
@@ -154,8 +155,33 @@ const authStore = useAuthStore()
 const logoutLoading = ref(false)
 
 // Get user info
-const userName = computed(() => authStore.user.value?.name || 'User')
-const userInitial = computed(() => (authStore.user.value?.name || 'U').charAt(0).toUpperCase())
+const userName = computed(() => authStore.user?.value?.name || authStore.user?.name || 'User')
+const userInitial = computed(() => (authStore.user?.value?.name || authStore.user?.name || 'U').charAt(0).toUpperCase())
+
+// Always fetch latest user profile after login or on mount
+async function refreshUserProfile() {
+  try {
+    const profile = await getUserProfile()
+    if (profile && profile.name) {
+      if (authStore.user?.value) {
+        authStore.user.value = { ...authStore.user.value, ...profile }
+      } else {
+        authStore.user = { ...authStore.user, ...profile }
+      }
+      localStorage.setItem('user', JSON.stringify(profile))
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+onMounted(() => {
+  refreshUserProfile()
+})
+
+watch(() => route.path, () => {
+  refreshUserProfile()
+})
 
 // Check if user is admin
 const isAdmin = computed(() => {

@@ -267,10 +267,103 @@
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.kcal || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bmr ? measurement.bmr.toFixed(0) : '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ getRatingLabel(measurement.physical_rating) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                <button @click="startEditMeasurement(measurement)" class="bg-transparent hover:bg-blue-500 text-gray-700 font-semibold hover:text-white py-2 px-4 border border-gray-500 hover:border-transparent rounded mr-2">Edit</button>
+                <button @click="confirmDeleteMeasurement(measurement)" class="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded">Delete</button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+          <!-- Edit Measurement Modal -->
+    <div v-if="editModalOpen" class="fixed inset-0 flex items-center justify-center z-50 bg-opacity-30 backdrop-blur-sm">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+        <h3 class="text-lg font-semibold mb-4">Edit Measurement</h3>
+        <form @submit.prevent="updateMeasurement" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Measurement Date *</label>
+              <input v-model="editForm.measurement_date" type="date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Measurement Time</label>
+              <input v-model="editForm.measurement_time" type="time" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Weight (kg) *</label>
+              <input v-model.number="editForm.weight_kg" type="number" step="0.1" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Body Fat (%)</label>
+              <input v-model.number="editForm.body_fat_percent" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Body Fat (kg)</label>
+              <input v-model.number="editForm.body_fat_kg" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Body Water (%)</label>
+              <input v-model.number="editForm.body_water_percent" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Muscle Mass (kg)</label>
+              <input v-model.number="editForm.muscle_mass" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Bone Mass (kg)</label>
+              <input v-model.number="editForm.bone_mass" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Physical Rating (1-9)</label>
+              <select v-model.number="editForm.physical_rating" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                <option :value="null">Select Rating</option>
+                <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Visceral Fat</label>
+              <input v-model.number="editForm.visceral_fat" type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Calories (kcal)</label>
+              <input v-model.number="editForm.kcal" type="number" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-2">BMR (kcal/day)</label>
+              <input v-model.number="editForm.bmr" type="number" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 mt-4">
+            <button type="button" @click="editModalOpen = false" class="px-4 py-2 border rounded-lg">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg">Save</button>
+          </div>
+        </form>
+        <button @click="editModalOpen = false" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700">&times;</button>
+      </div>
+    </div>
+
+        <!-- Delete Confirmation Modal -->
+    <div v-if="deleteModalOpen" class="fixed inset-0 flex items-center justify-center z-50 bg-opacity-30 backdrop-blur-sm">
+      <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+        <h3 class="text-lg font-semibold mb-4">Delete Measurement</h3>
+        <p>Are you sure you want to delete this measurement?</p>
+        <div class="flex justify-end gap-2 mt-6">
+          <button type="button" @click="deleteModalOpen = false" class="px-4 py-2 border rounded-lg">Cancel</button>
+          <button type="button" @click="deleteMeasurement" class="px-4 py-2 bg-red-600 text-white rounded-lg">Delete</button>
+        </div>
+        <button @click="deleteModalOpen = false" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700">&times;</button>
+      </div>
+    </div>
 
       <!-- Pagination Controls -->
       <div v-if="measurements.length > 0" class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
@@ -322,6 +415,76 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+
+// Delete modal state
+const deleteModalOpen = ref(false)
+const measurementToDelete = ref(null)
+
+function confirmDeleteMeasurement(measurement) {
+  measurementToDelete.value = measurement
+  deleteModalOpen.value = true
+}
+
+async function deleteMeasurement() {
+  try {
+    const response = await fetch(`/api/body-compositions/${measurementToDelete.value.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    })
+    if (!response.ok) throw new Error('Failed to delete measurement')
+    deleteModalOpen.value = false
+    await loadMeasurements()
+  } catch (error) {
+    alert(error.message || 'Failed to delete measurement')
+  }
+}
+// Edit modal state
+const editModalOpen = ref(false)
+const editForm = ref({})
+
+// Start editing a measurement
+function startEditMeasurement(measurement) {
+  // Map backend keys to modal keys for editing
+  editForm.value = {
+    id: measurement.id,
+    measurement_date: measurement.measurement_date || '',
+    measurement_time: measurement.measurement_time || '',
+    weight_kg: measurement.weight_kg,
+    body_fat_percent: measurement.body_fat_percent,
+    body_fat_kg: measurement.body_fat_kg,
+    body_water_percent: measurement.body_water_percent,
+    muscle_mass: measurement.muscle_mass,
+    bone_mass: measurement.bone_mass,
+    kcal: measurement.kcal,
+    bmr: measurement.bmr,
+    visceral_fat: measurement.visceral_fat,
+    physical_rating: measurement.physical_rating,
+  }
+  editModalOpen.value = true
+}
+
+// Update measurement (PUT/PATCH)
+async function updateMeasurement() {
+  try {
+    const response = await fetch(`/api/body-compositions/${editForm.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+      body: JSON.stringify(editForm.value),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.message || 'Failed to update measurement')
+    editModalOpen.value = false
+    await loadMeasurements()
+  } catch (error) {
+    alert(error.message || 'Failed to update measurement')
+  }
+}
+
 
 const form = ref({
   measurementDate: new Date().toISOString().split('T')[0],
