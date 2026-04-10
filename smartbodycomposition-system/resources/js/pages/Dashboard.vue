@@ -61,15 +61,15 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ currentData.weight_kg || '-' }}</span>
-              <span class="text-gray-500 text-sm">kg</span>
+              <span class="text-3xl font-bold text-gray-900">{{ displayWeight ?? '-' }}</span>
+              <span class="text-gray-500 text-sm">{{ unitStore.weightLabel }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span :class="[
                 'text-sm font-medium',
                 weightChange <= 0 ? 'text-green-600' : 'text-orange-600'
               ]">
-                {{ weightChange <= 0 ? '-' : '+' }}{{ Math.abs(weightChange) }} kg
+                {{ weightChange <= 0 ? '-' : '+' }}{{ displayWeightChange }} {{ unitStore.weightLabel }}
               </span>
               <span class="text-xs text-gray-500">({{ Math.abs(weightChangePercent).toFixed(1) }}%)</span>
             </div>
@@ -139,12 +139,12 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ (currentData.muscle_mass || 0).toFixed(1) }}</span>
-              <span class="text-gray-500 text-sm">kg</span>
+              <span class="text-3xl font-bold text-gray-900">{{ displayMuscle ?? '-' }}</span>
+              <span class="text-gray-500 text-sm">{{ unitStore.weightLabel }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-sm font-medium text-green-600">
-                {{ muscleMassChange >= 0 ? '+' : '-' }}{{ Math.abs(muscleMassChange).toFixed(1) }} kg
+                {{ muscleMassChange >= 0 ? '+' : '-' }}{{ displayMuscleMassChange }} {{ unitStore.weightLabel }}
               </span>
             </div>
           </div>
@@ -203,7 +203,7 @@
               label="Weight"
               color="#16a34a"
               fill-color="rgba(34, 197, 94, 0.18)"
-              unit="kg"
+              :unit="unitStore.weightLabel"
               empty-title="No weight records in this time range"
               empty-subtitle="Add more measurements to see your weight trend"
             />
@@ -234,7 +234,7 @@
               label="Muscle Mass"
               color="#059669"
               fill-color="rgba(16, 185, 129, 0.18)"
-              unit="kg"
+              :unit="unitStore.weightLabel"
               empty-title="No muscle mass records in this time range"
               empty-subtitle="Log muscle measurements to view this chart"
             />
@@ -417,7 +417,7 @@
                   <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                      <th class="text-left py-3 px-4 font-semibold text-gray-700">Weight (kg)</th>
+                      <th class="text-left py-3 px-4 font-semibold text-gray-700">Weight ({{ unitStore.weightLabel }})</th>
                       <th class="text-left py-3 px-4 font-semibold text-gray-700">Body Fat %</th>
                       <th class="text-left py-3 px-4 font-semibold text-gray-700">Muscle Mass</th>
                     </tr>
@@ -425,9 +425,9 @@
                   <tbody>
                     <tr v-for="record in filteredRecords.slice(0, 5)" :key="record.id" class="border-b border-gray-200 hover:bg-gray-50">
                       <td class="py-3 px-4">{{ record.measurement_date }}</td>
-                      <td class="py-3 px-4">{{ record.weight_kg?.toFixed(1) || '-' }} kg</td>
+                      <td class="py-3 px-4">{{ unitStore.convertWeight(record.weight_kg)?.toFixed(1) || '-' }} {{ unitStore.weightLabel }}</td>
                       <td class="py-3 px-4">{{ record.body_fat_percent?.toFixed(1) || '-' }}%</td>
-                      <td class="py-3 px-4">{{ record.muscle_mass?.toFixed(1) || '-' }} kg</td>
+                      <td class="py-3 px-4">{{ unitStore.convertWeight(record.muscle_mass)?.toFixed(1) || '-' }} {{ unitStore.weightLabel }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -446,6 +446,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import MetricLineChart from '../components/MetricLineChart.vue'
 import { getUserProfile } from '../services/authService'
+import { useUnitStore } from '../stores/unitStore'
 
 const timeRange = ref('1M')
 const startDate = ref('')
@@ -453,6 +454,8 @@ const endDate = ref('')
 const measurements = ref([])
 const loading = ref(true)
 const userHeight = ref(null) // in cm
+
+const unitStore = useUnitStore()
 
 // Computed properties
 const data = computed(() => {
@@ -521,6 +524,12 @@ const weightChangePercent = computed(() => {
   return ((weightChange.value / previousData.value.weight_kg) * 100).toFixed(1)
 })
 
+// Display-unit computeds
+const displayWeight = computed(() => unitStore.convertWeight(currentData.value.weight_kg))
+const displayMuscle = computed(() => unitStore.convertWeight(currentData.value.muscle_mass))
+const displayWeightChange = computed(() => unitStore.convertWeight(Math.abs(weightChange.value)))
+const displayMuscleMassChange = computed(() => unitStore.convertWeight(Math.abs(muscleMassChange.value)))
+
 const bodyFatChange = computed(() => {
   const curr = currentData.value.body_fat_percent
   const prev = previousData.value.body_fat_percent
@@ -561,17 +570,17 @@ const formatChartLabel = (dateString) => {
   })
 }
 
-const buildMetricChart = (key) => {
+const buildMetricChart = (key, convert = (v) => v) => {
   const chartRecords = data.value.filter(record => typeof record[key] === 'number' && !Number.isNaN(record[key]))
 
   return {
     labels: chartRecords.map(record => formatChartLabel(record.measurement_date)),
-    values: chartRecords.map(record => Number(record[key].toFixed(1))),
+    values: chartRecords.map(record => Number(convert(record[key]).toFixed(1))),
   }
 }
 
-const weightChart = computed(() => buildMetricChart('weight_kg'))
-const muscleChart = computed(() => buildMetricChart('muscle_mass'))
+const weightChart = computed(() => buildMetricChart('weight_kg', (v) => unitStore.convertWeight(v)))
+const muscleChart = computed(() => buildMetricChart('muscle_mass', (v) => unitStore.convertWeight(v)))
 const bodyFatChart = computed(() => buildMetricChart('body_fat_percent'))
 
 const buildZoneSegments = (zones) => {

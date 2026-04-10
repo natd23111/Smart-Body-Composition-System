@@ -59,7 +59,7 @@
         <!-- Weight and Body Fat Percentage -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-900 mb-2">Weight (kg) *</label>
+            <label class="block text-sm font-medium text-gray-900 mb-2">Weight ({{ unitStore.weightLabel }}) *</label>
             <input
               v-model.number="form.weightKg"
               type="number"
@@ -241,11 +241,11 @@
             <tr class="border-b border-gray-200">
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Time</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Weight (kg)</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Weight ({{ unitStore.weightLabel }})</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Fat (%)</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Fat (kg)</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Muscle (kg)</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Bone Mass (kg)</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Fat ({{ unitStore.weightLabel }})</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Muscle ({{ unitStore.weightLabel }})</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Bone Mass ({{ unitStore.weightLabel }})</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Water (%)</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Visceral Fat</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Calories (kcal)</th>
@@ -257,11 +257,11 @@
             <tr v-for="measurement in paginatedMeasurements" :key="measurement.id" class="border-b border-gray-100 hover:bg-gray-50">
               <td class="px-4 py-3 text-sm text-gray-900">{{ formatDate(measurement.measurement_date) }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.measurement_time || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.weight_kg?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.weight_kg)?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_fat_percent?.toFixed(1) || '-' }}%</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_fat_kg?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.muscle_mass?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bone_mass?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.body_fat_kg)?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.muscle_mass)?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.bone_mass)?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_water_percent?.toFixed(1) || '-' }}%</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.visceral_fat?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.kcal || '-' }}</td>
@@ -292,7 +292,7 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-900 mb-2">Weight (kg) *</label>
+              <label class="block text-sm font-medium text-gray-900 mb-2">Weight ({{ unitStore.weightLabel }}) *</label>
               <input v-model.number="editForm.weight_kg" type="number" step="0.1" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
             </div>
             <div>
@@ -415,6 +415,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useUnitStore } from '../stores/unitStore'
+
+const unitStore = useUnitStore()
 
 // Delete modal state
 const deleteModalOpen = ref(false)
@@ -451,12 +454,12 @@ function startEditMeasurement(measurement) {
     id: measurement.id,
     measurement_date: measurement.measurement_date || '',
     measurement_time: measurement.measurement_time || '',
-    weight_kg: measurement.weight_kg,
+    weight_kg: unitStore.convertWeight(measurement.weight_kg),
     body_fat_percent: measurement.body_fat_percent,
-    body_fat_kg: measurement.body_fat_kg,
+    body_fat_kg: unitStore.convertWeight(measurement.body_fat_kg),
     body_water_percent: measurement.body_water_percent,
-    muscle_mass: measurement.muscle_mass,
-    bone_mass: measurement.bone_mass,
+    muscle_mass: unitStore.convertWeight(measurement.muscle_mass),
+    bone_mass: unitStore.convertWeight(measurement.bone_mass),
     kcal: measurement.kcal,
     bmr: measurement.bmr,
     visceral_fat: measurement.visceral_fat,
@@ -468,13 +471,20 @@ function startEditMeasurement(measurement) {
 // Update measurement (PUT/PATCH)
 async function updateMeasurement() {
   try {
+    const payload = {
+      ...editForm.value,
+      weight_kg: unitStore.toKg(editForm.value.weight_kg),
+      body_fat_kg: unitStore.toKg(editForm.value.body_fat_kg),
+      muscle_mass: unitStore.toKg(editForm.value.muscle_mass),
+      bone_mass: unitStore.toKg(editForm.value.bone_mass),
+    }
     const response = await fetch(`/api/body-compositions/${editForm.value.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
       },
-      body: JSON.stringify(editForm.value),
+      body: JSON.stringify(payload),
     })
     const data = await response.json()
     if (!response.ok) throw new Error(data.message || 'Failed to update measurement')
@@ -563,13 +573,13 @@ const recordMeasurement = async () => {
       body: JSON.stringify({
         measurement_date: form.value.measurementDate,
         measurement_time: form.value.measurementTime || null,
-        weight_kg: form.value.weightKg,
+        weight_kg: unitStore.toKg(form.value.weightKg),
         body_fat_percent: form.value.bodyFatPercent,
-        body_fat_kg: form.value.bodyFatKg,
+        body_fat_kg: unitStore.toKg(form.value.bodyFatKg),
         body_water_percent: form.value.bodyWaterPercent,
-        muscle_mass: form.value.muscleMass,
+        muscle_mass: unitStore.toKg(form.value.muscleMass),
         physical_rating: form.value.physicalRating || null,
-        bone_mass: form.value.boneMass,
+        bone_mass: unitStore.toKg(form.value.boneMass),
         kcal: form.value.kcal,
         bmr: form.value.bmr,
         visceral_fat: form.value.visceralFat,

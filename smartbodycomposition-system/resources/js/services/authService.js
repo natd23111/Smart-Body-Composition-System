@@ -240,6 +240,37 @@ export async function changePassword(passwordData) {
   }
 }
 
+export async function deleteAccount(password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/account`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ password }),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Failed to delete account')
+    }
+
+    // Clear all local auth data
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('weightUnit')
+    localStorage.removeItem('heightUnit')
+
+    return true
+  } catch (error) {
+    throw new Error(error.message || 'Failed to delete account. Please try again.')
+  }
+}
+
 export function setAuthToken(token) {
   if (token) {
     localStorage.setItem('auth_token', token)

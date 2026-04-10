@@ -122,6 +122,24 @@ Route::middleware('auth:sanctum')->group(function () {
             'message' => 'Password changed successfully',
         ]);
     });
+
+    Route::delete('/user/account', function (Request $request) {
+        $request->validate([
+            'password' => 'required',
+        ]);
+
+        $user = $request->user();
+
+        if (!password_verify($request->password, $user->password)) {
+            return response()->json(['error' => 'Password is incorrect'], 422);
+        }
+
+        // Revoke all tokens before deleting
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted successfully']);
+    });
 });
 
 // Protected Routes

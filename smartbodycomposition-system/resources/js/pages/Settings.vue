@@ -42,6 +42,28 @@
 
     <!-- Personal Information Tab -->
     <div v-show="activeTab === 'personal'" class="space-y-6">
+      <!-- Alert Messages -->
+      <Transition name="fade">
+        <div v-if="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+          <svg class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <p class="text-green-800 text-sm">{{ successMessage }}</p>
+        </div>
+      </Transition>
+
+      <Transition name="fade">
+        <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <svg class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p class="text-red-800 text-sm">{{ errorMessage }}</p>
+        </div>
+      </Transition>
+
 
       <!-- Basic Information -->
       <div class="bg-white rounded-lg shadow border border-gray-200">
@@ -106,7 +128,7 @@
 
             <!-- Height -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-900">Height (cm)</label>
+              <label class="block text-sm font-medium text-gray-900">Height ({{ unitStore.heightLabel }})</label>
               <input
                 v-model.number="personalInfo.height_cm"
                 type="number"
@@ -118,6 +140,20 @@
               />
             </div>
           </div>
+                <!-- Save Button -->
+      <div class="flex justify-end gap-4">
+        <button
+          @click="savePersonalInfo"
+          :disabled="savingPersonal"
+          class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors flex items-center gap-2"
+        >
+          <svg v-if="savingPersonal" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ savingPersonal ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
         </div>
       </div>
 
@@ -201,51 +237,6 @@
         </div>
       </div>
 
-
-
-      <!-- Alert Messages -->
-      <Transition name="fade">
-        <div v-if="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-          <svg class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          <p class="text-green-800 text-sm">{{ successMessage }}</p>
-        </div>
-      </Transition>
-
-      <Transition name="fade">
-        <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <svg class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <p class="text-red-800 text-sm">{{ errorMessage }}</p>
-        </div>
-      </Transition>
-
-      <!-- Save Button -->
-      <div class="flex justify-end gap-4">
-        <button
-          @click="resetForm"
-          type="button"
-          class="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          @click="savePersonalInfo"
-          :disabled="savingPersonal"
-          class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors flex items-center gap-2"
-        >
-          <svg v-if="savingPersonal" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ savingPersonal ? 'Saving...' : 'Save Changes' }}
-        </button>
-      </div>
     </div>
 
     <!-- System Preferences Tab -->
@@ -266,6 +257,7 @@
               <label class="block text-sm font-medium text-gray-900">Weight Unit</label>
               <select
                 v-model="systemPrefs.weightUnit"
+                @change="unitStore.setUnits(systemPrefs.weightUnit, systemPrefs.heightUnit)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="kg">Kilograms (kg)</option>
@@ -279,6 +271,7 @@
               <label class="block text-sm font-medium text-gray-900">Height Unit</label>
               <select
                 v-model="systemPrefs.heightUnit"
+                @change="unitStore.setUnits(systemPrefs.weightUnit, systemPrefs.heightUnit)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="cm">Centimeters (cm)</option>
@@ -371,11 +364,8 @@
         <div class="px-6 py-4 space-y-3">
           <div class="flex justify-between items-center py-2 border-b border-gray-200">
             <span class="text-sm text-gray-600">Member Since</span>
-            <span class="font-medium text-gray-900">January 15, 2025</span>
-          </div>
-          <div class="flex justify-between items-center py-2 border-b border-gray-200">
-            <span class="text-sm text-gray-600">Last Login</span>
-            <span class="font-medium text-gray-900">Today at 10:30 AM</span>
+            <span class="font-medium text-gray-900">{{ memberSince }}</span>
+
           </div>
           <div class="flex justify-between items-center py-2">
             <span class="text-sm text-gray-600">Account Status</span>
@@ -387,11 +377,14 @@
       <!-- Danger Zone -->
       <div class="bg-red-50 rounded-lg shadow border border-red-200">
         <div class="px-6 py-4 border-b border-red-200">
-          <h3 class="text-lg font-semibold text-red-600">Danger Zone</h3>
+          <h3 class="text-lg font-semibold text-red-600">Delete Account</h3>
           <p class="text-sm text-gray-600 mt-1">Irreversible actions</p>
         </div>
         <div class="px-6 py-4 space-y-3">
-          <button class="w-full px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium">
+          <button
+            @click="openDeleteModal"
+            class="w-full px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
+          >
             Delete Account
           </button>
           <p class="text-xs text-gray-600 text-center">
@@ -400,31 +393,65 @@
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="flex justify-end">
-        <button
-          @click="() => {}"
-          class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-        >
-          <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-          Save Preferences
-        </button>
+      <!-- Delete Account Confirmation Modal -->
+      <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <h3 class="text-lg font-bold text-red-600 mb-2">Delete Account</h3>
+          <p class="text-sm text-gray-600 mb-4">
+            This action is <strong>permanent</strong> and cannot be undone. All your data will be deleted. Enter your password to confirm.
+          </p>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input
+            v-model="deletePassword"
+            type="password"
+            placeholder="Enter your password"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 mb-2"
+            @keydown.enter="confirmDeleteAccount"
+          />
+          <p v-if="deleteError" class="text-sm text-red-600 mb-3">{{ deleteError }}</p>
+          <div class="flex gap-3 mt-4">
+            <button
+              @click="closeDeleteModal"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              :disabled="deletingAccount"
+            >
+              Cancel
+            </button>
+            <button
+              @click="confirmDeleteAccount"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
+              :disabled="deletingAccount"
+            >
+              {{ deletingAccount ? 'Deleting...' : 'Delete My Account' }}
+            </button>
+          </div>
+        </div>
       </div>
+
+
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authPiniaStore'
-import { getUserProfile, updateUserProfile, changePassword } from '@/services/authService'
+import { useUnitStore } from '@/stores/unitStore'
+import { getUserProfile, updateUserProfile, changePassword, deleteAccount } from '@/services/authService'
 
 const authStore = useAuthStore()
+const unitStore = useUnitStore()
+const router = useRouter()
 
 const activeTab = ref('personal')
 const showPassword = ref(false)
 const savingPersonal = ref(false)
 const savingPassword = ref(false)
+const showDeleteModal = ref(false)
+const deletingAccount = ref(false)
+const deletePassword = ref('')
+const deleteError = ref('')
 const loadingProfile = ref(true)
 
 const successMessage = ref('')
@@ -437,6 +464,8 @@ const personalInfo = ref({
   gender: '',
   height_cm: '',
 })
+
+const memberSince = ref('-')
 
 const personalErrors = ref({})
 
@@ -460,6 +489,9 @@ const systemPrefs = ref({
 
 // Load user profile on mount
 onMounted(async () => {
+  // Sync unit preferences from store
+  systemPrefs.value.weightUnit = unitStore.weightUnit
+  systemPrefs.value.heightUnit = unitStore.heightUnit
   try {
     const profile = await getUserProfile()
     personalInfo.value = {
@@ -467,7 +499,10 @@ onMounted(async () => {
       email: profile.email || '',
       age: profile.age || '',
       gender: profile.gender || '',
-      height_cm: profile.height_cm || '',
+      height_cm: profile.height_cm ? unitStore.convertHeight(profile.height_cm) : '',
+    }
+    if (profile.created_at) {
+      memberSince.value = new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     }
   } catch (error) {
     console.error('Failed to load profile:', error)
@@ -527,16 +562,12 @@ const savePersonalInfo = async () => {
       email: personalInfo.value.email.trim().toLowerCase(),
       age: personalInfo.value.age,
       gender: personalInfo.value.gender,
-      height_cm: personalInfo.value.height_cm,
+      height_cm: unitStore.toCm(personalInfo.value.height_cm),
     })
 
-    // Update auth store
-    authStore.user.value = {
-      id: updated.id,
-      name: updated.name,
-      email: updated.email,
-      role: updated.role,
-    }
+    // Update auth store and localStorage with full user object
+    authStore.user = updated
+    localStorage.setItem('user', JSON.stringify(updated))
 
     successMessage.value = 'Profile updated successfully!'
     setTimeout(() => {
@@ -600,5 +631,36 @@ const savePasswordChange = async () => {
 const isValidEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return re.test(email)
+}
+
+const openDeleteModal = () => {
+  deletePassword.value = ''
+  deleteError.value = ''
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  deletePassword.value = ''
+  deleteError.value = ''
+}
+
+const confirmDeleteAccount = async () => {
+  if (!deletePassword.value) {
+    deleteError.value = 'Please enter your password to confirm.'
+    return
+  }
+  deletingAccount.value = true
+  deleteError.value = ''
+  try {
+    await deleteAccount(deletePassword.value)
+    authStore.user = null
+    authStore.isAuthenticated = false
+    router.push('/login')
+  } catch (error) {
+    deleteError.value = error.message || 'Failed to delete account. Please try again.'
+  } finally {
+    deletingAccount.value = false
+  }
 }
 </script>
