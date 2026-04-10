@@ -76,7 +76,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ (currentData.bmi || 0).toFixed(1) }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ computedBMI.toFixed(1) }}</span>
               <span class="text-gray-500 text-sm">kg/m²</span>
             </div>
             <span :class="[
@@ -247,14 +247,23 @@
                 </span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
-                <div :class="bmiZone.barColor + ' h-2 rounded-full transition-all duration-300'"
-                  :style="{ width: `${Math.min(((currentData.bmi || 0) / 30) * 100, 100)}%` }">
+                <div class="relative w-full bg-gray-200 rounded-full h-2">
+                  <div :class="bmiZone.barColor + ' h-2 rounded-full transition-all duration-300'"
+                    :style="{ width: `${Math.min(((computedBMI || 0) / 30) * 100, 100)}%` }">
+                  </div>
+                  <!-- BMI Pointer Marker -->
+                  <div
+                    class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md transition-all"
+                    :style="{ left: `calc(${Math.min(((computedBMI || 0) / 30) * 100, 100)}% - 8px)` }"
+                    :title="`BMI: ${computedBMI.toFixed(1)}`"
+                  ></div>
                 </div>
               </div>
               <div class="flex justify-between text-xs text-gray-600">
                 <span>Underweight</span>
-                <span>Normal</span>
+                <span class="font-bold text-green-700">Normal</span>
                 <span>Overweight</span>
+                <span class="font-bold text-red-700">Obese</span>
               </div>
             </div>
 
@@ -456,12 +465,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { getUserProfile } from '../services/authService'
 
 const timeRange = ref('1M')
 const startDate = ref('')
 const endDate = ref('')
 const measurements = ref([])
 const loading = ref(true)
+const userHeight = ref(null) // in cm
 
 // Computed properties
 const data = computed(() => {
@@ -498,9 +509,18 @@ const data = computed(() => {
 
 const currentData = computed(() => {
   if (data.value.length === 0) {
-    return { weight_kg: 0, body_fat_percent: 0, muscle_mass: 0, bmi: 0 }
+    return { weight_kg: 0, body_fat_percent: 0, muscle_mass: 0 }
   }
   return data.value[data.value.length - 1]
+})
+
+// Compute BMI dynamically using latest weight and user height
+const computedBMI = computed(() => {
+  const weight = currentData.value.weight_kg || 0
+  const heightCm = userHeight.value
+  if (!weight || !heightCm) return 0
+  const heightM = heightCm / 100
+  return weight / (heightM * heightM)
 })
 
 const previousData = computed(() => {
@@ -520,9 +540,6 @@ const weightChangePercent = computed(() => {
   if (previousData.value.weight_kg === 0) return 0
   return ((weightChange.value / previousData.value.weight_kg) * 100).toFixed(1)
 })
-
-
-// ...existing code...
 
 const bodyFatChange = computed(() => {
   const curr = currentData.value.body_fat_percent
@@ -550,7 +567,7 @@ const getBodyFatZone = (bodyFat) => {
   return { label: 'Average', badgeColor: 'bg-yellow-600' }
 }
 
-const bmiZone = computed(() => getBMIZone(currentData.value.bmi || 0))
+const bmiZone = computed(() => getBMIZone(computedBMI.value || 0))
 const bodyFatZone = computed(() => getBodyFatZone(currentData.value.body_fat_percent || 0))
 
 const filteredRecords = computed(() => {
@@ -597,8 +614,14 @@ const loadMeasurements = async () => {
 }
 
 // Load on mount
-onMounted(() => {
+onMounted(async () => {
   loadMeasurements()
+  try {
+    const profile = await getUserProfile()
+    userHeight.value = profile.height_cm
+  } catch (e) {
+    userHeight.value = null
+  }
 })
 
 // Watch for time range changes
