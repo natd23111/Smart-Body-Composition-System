@@ -10,6 +10,411 @@ class RecommendationEngine
 {
     private const VALID_STATUSES = ['pending', 'in-progress', 'completed'];
 
+    public function buildTrendAnalysis(User $user, int $periodDays): array
+    {
+        $since = now()->subDays($periodDays)->startOfDay();
+
+        $measurements = $user->bodyCompositions()
+            ->where('measurement_date', '>=', $since)
+            ->orderBy('measurement_date')
+            ->orderBy('created_at')
+            ->get();
+
+        $profile = $this->resolveProfile($user);
+        $ranges  = $this->resolveReferenceRanges($profile);
+        $count   = $measurements->count();
+
+        if ($count < 2) {
+            return [
+                'data' => [],
+                'meta' => [
+                    'has_data'          => false,
+                    'period_days'       => $periodDays,
+                    'measurement_count' => $count,
+                    'profile'           => $profile,
+                ],
+            ];
+        }
+
+        $first = $measurements->first();
+        $last  = $measurements->last();
+
+        $heightM = $user->height_cm ? $user->height_cm / 100 : null;
+
+        $insights = array_filter([
+            $this->trendInsightBodyFat($first, $last, $measurements, $profile, $ranges),
+            $this->trendInsightMuscleMass($first, $last, $measurements, $profile, $ranges),
+            $this->trendInsightBodyWater($first, $last, $measurements, $profile, $ranges),
+            $this->trendInsightVisceralFat($first, $last, $measurements, $ranges),
+            $this->trendInsightWeight($first, $last, $measurements, $heightM),
+        ]);
+
+        $insights = array_values($insights);
+
+        return [
+            'data' => $insights,
+            'meta' => [
+                'has_data'          => true,
+                'period_days'       => $periodDays,
+                'measurement_count' => $count,
+                'profile'           => $profile,
+                'summary'           => $this->trendSummary($insights, $count),
+                'ai_insight'        => $this->trendAIInsight($insights),
+            ],
+        ];
+    }
+
+    // ─── Individual metric trend builders ────────────────────────────────────
+
+    private function trendInsightBodyFat($first, $last, $measurements, array $profile, array $ranges): ?array
+    {
+        if ($first->body_fat_percent === null || $last->body_fat_percent === null) return null;
+
+        $before    = (float) $first->body_fat_percent;
+        $after     = (float) $last->body_fat_percent;
+        $absChange = round($after - $before, 1);
+        $direction = $this->trendDirection($absChange);
+
+        $severity = match (true) {
+            $after >= $ranges['body_fat_high_min']     => 'high',
+            $after >= $ranges['body_fat_elevated_min'] => 'moderate',
+            default                                    => 'low',
+        };
+
+        $minDisplay = $profile['gender_key'] === 'female' ? 14 : 6;
+
+        $conclusion = match ($direction) {
+            'up'   => "Your body fat percentage has increased by {$absChange}% over this period. This may indicate a caloric surplus or reduced exercise frequency. Review your dietary habits and consider increasing cardiovascular activity.",
+            'down' => 'Your body fat percentage has decreased, which reflects positive progress from your fitness and nutrition efforts. Keep maintaining your current routine.',
+            default => 'Your body fat percentage has remained stable over this period. Consistency in your current habits is keeping you on track.',
+        };
+
+        $recs = $direction === 'up'
+            ? [
+                ['icon' => '🏃', 'title' => 'Increase Cardiovascular Activity', 'description' => 'Add 30 min cardio 4–5 times per week to support fat reduction'],
+                ['icon' => '🥗', 'title' => 'Adjust Caloric Intake', 'description' => 'Focus on whole foods and reduce processed, high-calorie options'],
+              ]
+            : [
+                ['icon' => '💪', 'title' => 'Continue Strength Training', 'description' => 'Maintain resistance training to support continued fat reduction'],
+                ['icon' => '🥗', 'title' => 'Sustain Nutrition Habits', 'description' => 'Keep your current nutritional approach to continue positive progress'],
+              ];
+
+        return [
+            'key'          => 'body_fat_percent',
+            'label'        => 'Body Fat Percentage',
+            'unit'         => '%',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => $minDisplay,
+                'max'     => $ranges['body_fat_healthy_max'],
+                'context' => "Personalised for {$profile['gender']}, age {$profile['age']}, {$profile['activity_level']} activity",
+            ],
+            'observation'  => $this->buildTrendObservation('Body Fat Percentage', $before, $after, $absChange, '%'),
+            'rule_applied' => "IF body fat % >= {$ranges['body_fat_elevated_min']}% (elevated threshold for your profile) → moderate severity\n"
+                            . "IF body fat % >= {$ranges['body_fat_high_min']}% (high threshold for your profile) → high severity\n"
+                            . "Thresholds sourced from config/recommendations.php → body_fat_percent.{$profile['gender_key']}",
+            'conclusion'      => $conclusion,
+            'recommendations' => $recs,
+            'data_points'     => $measurements
+                ->filter(fn ($m) => $m->body_fat_percent !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->body_fat_percent])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightMuscleMass($first, $last, $measurements, array $profile, array $ranges): ?array
+    {
+        if ($first->muscle_mass === null || $last->muscle_mass === null
+            || $last->weight_kg === null || $last->weight_kg == 0) return null;
+
+        $before    = (float) $first->muscle_mass;
+        $after     = (float) $last->muscle_mass;
+        $absChange = round($after - $before, 1);
+        $direction = $this->trendDirection($absChange);
+
+        $muscleRatioAfter = round(($after / (float) $last->weight_kg) * 100, 1);
+        $ratioBefore      = $first->weight_kg && $first->weight_kg > 0
+            ? round(($before / (float) $first->weight_kg) * 100, 1)
+            : null;
+
+        $severity = match (true) {
+            $muscleRatioAfter < ($ranges['muscle_ratio_minimum'] - 4) => 'high',
+            $muscleRatioAfter < $ranges['muscle_ratio_minimum']       => 'moderate',
+            default                                                   => 'low',
+        };
+
+        $conclusion = match ($direction) {
+            'down' => "Your muscle mass has decreased by " . abs($absChange) . " kg over this period. This may indicate insufficient protein intake or reduced training volume. Prioritise resistance training and distribute protein throughout the day.",
+            'up'   => "Your muscle mass has increased by {$absChange} kg over this period. Your resistance training and nutrition are effectively supporting muscle growth — keep it up.",
+            default => 'Your muscle mass has remained stable, reflecting consistent training and nutrition habits.',
+        };
+
+        $recs = $direction === 'down'
+            ? [
+                ['icon' => '🏋️', 'title' => 'Increase Resistance Training', 'description' => 'Prioritise compound movements at least 3 times per week'],
+                ['icon' => '🥩', 'title' => 'Boost Protein Intake', 'description' => 'Aim for 1.6–2.2 g of protein per kg body weight daily'],
+              ]
+            : [
+                ['icon' => '💪', 'title' => 'Maintain Training Volume', 'description' => 'Keep up your resistance training to sustain muscle growth'],
+                ['icon' => '😴', 'title' => 'Prioritise Recovery', 'description' => 'Adequate sleep and rest days support continued muscle adaptation'],
+              ];
+
+        return [
+            'key'          => 'muscle_mass',
+            'label'        => 'Muscle Mass',
+            'unit'         => ' kg',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => round($ranges['muscle_ratio_minimum'] / 100 * (float) $last->weight_kg, 1),
+                'max'     => round(($ranges['muscle_ratio_minimum'] + 15) / 100 * (float) $last->weight_kg, 1),
+                'context' => "Minimum muscle ratio {$ranges['muscle_ratio_minimum']}% of body weight — personalised for your profile",
+            ],
+            'observation'  => $this->buildTrendObservation('Muscle Mass', $before, $after, $absChange, ' kg'),
+            'rule_applied' => "Muscle ratio = muscle mass / body weight × 100\n"
+                            . "IF ratio < {$ranges['muscle_ratio_minimum']}% (profile minimum) → moderate severity\n"
+                            . "IF ratio < " . ($ranges['muscle_ratio_minimum'] - 4) . "% → high severity\n"
+                            . "Current ratio after: {$muscleRatioAfter}%\n"
+                            . "Threshold from config/recommendations.php → muscle_ratio.{$profile['gender_key']} with activity/age adjustments",
+            'conclusion'      => $conclusion,
+            'recommendations' => $recs,
+            'data_points'     => $measurements
+                ->filter(fn ($m) => $m->muscle_mass !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->muscle_mass])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightBodyWater($first, $last, $measurements, array $profile, array $ranges): ?array
+    {
+        if ($first->body_water_percent === null || $last->body_water_percent === null) return null;
+
+        $before    = (float) $first->body_water_percent;
+        $after     = (float) $last->body_water_percent;
+        $absChange = round($after - $before, 1);
+        $direction = $this->trendDirection($absChange);
+        $minimum   = $ranges['body_water_minimum'];
+
+        $severity = match (true) {
+            $after < ($minimum - 5) => 'high',
+            $after < $minimum       => 'moderate',
+            default                 => 'low',
+        };
+
+        $conclusion = $after < $minimum
+            ? "Your body water percentage is below the personalised minimum of {$minimum}%. Chronic underhydration can impair physical performance, metabolism, and recovery. Prioritise consistent fluid intake throughout the day."
+            : match ($direction) {
+                'down'  => "Your body water has decreased over this period. Ensure you are drinking enough fluids, especially around exercise and in warm conditions.",
+                'up'    => 'Your body water levels have improved, which reflects better hydration habits. Continue your current fluid intake routine.',
+                default => "Your body water levels are stable and at or above the personalised minimum of {$minimum}%. Your hydration habits appear consistent.",
+            };
+
+        return [
+            'key'          => 'body_water_percent',
+            'label'        => 'Body Water',
+            'unit'         => '%',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => $minimum,
+                'max'     => 65,
+                'context' => "Personalised minimum of {$minimum}% based on gender and activity level ({$profile['activity_level']})",
+            ],
+            'observation'  => $this->buildTrendObservation('Body Water', $before, $after, $absChange, '%'),
+            'rule_applied' => "Minimum body water threshold = {$minimum}% (base for gender + activity adjustment)\n"
+                            . "IF current value < {$minimum}% → moderate severity\n"
+                            . "IF current value < " . ($minimum - 5) . "% → high severity\n"
+                            . "Threshold from config/recommendations.php → body_water_percent.{$profile['gender_key']} + activity_adjustment.{$profile['activity_level']}",
+            'conclusion'      => $conclusion,
+            'recommendations' => [
+                ['icon' => '💧', 'title' => 'Increase Daily Fluid Intake', 'description' => 'Aim for 2–2.5 litres of water per day and more during exercise'],
+                ['icon' => '🥦', 'title' => 'Eat Water-Rich Foods', 'description' => 'Fruits and vegetables contribute significantly to overall hydration'],
+            ],
+            'data_points' => $measurements
+                ->filter(fn ($m) => $m->body_water_percent !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->body_water_percent])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightVisceralFat($first, $last, $measurements, array $ranges): ?array
+    {
+        if ($first->visceral_fat === null || $last->visceral_fat === null) return null;
+
+        $before    = (float) $first->visceral_fat;
+        $after     = (float) $last->visceral_fat;
+        $absChange = round($after - $before, 1);
+        $direction = $this->trendDirection($absChange);
+
+        $severity = match (true) {
+            $after >= $ranges['visceral_fat_high_min']     => 'high',
+            $after >= $ranges['visceral_fat_elevated_min'] => 'moderate',
+            default                                        => 'low',
+        };
+
+        $conclusion = match (true) {
+            $after >= $ranges['visceral_fat_high_min']     => "Your visceral fat level is significantly above the recommended threshold. High visceral fat is associated with metabolic health risks. A combination of regular cardiovascular exercise and a balanced, lower-calorie diet is the most effective approach.",
+            $after >= $ranges['visceral_fat_elevated_min'] => "Your visceral fat is in the elevated range. Addressing this now with consistent cardio and reduced processed food intake is beneficial before it reaches a high level.",
+            $direction === 'down'                          => "Your visceral fat has decreased over this period, which is a significant positive health marker. Continue your current cardiovascular and dietary habits.",
+            default                                        => "Your visceral fat level is within the healthy range and has remained stable. Continue your current lifestyle habits.",
+        };
+
+        $recs = $after >= $ranges['visceral_fat_elevated_min']
+            ? [
+                ['icon' => '🏃', 'title' => 'Add Regular Cardio Sessions', 'description' => 'Cardiovascular exercise is the most effective way to reduce visceral fat'],
+                ['icon' => '🥗', 'title' => 'Reduce Processed Food Intake', 'description' => 'Limit refined carbohydrates and saturated fats in your daily diet'],
+              ]
+            : [
+                ['icon' => '🏃', 'title' => 'Continue Cardiovascular Training', 'description' => 'Sustain your cardio habits to keep visceral fat at healthy levels'],
+                ['icon' => '😴', 'title' => 'Manage Stress and Sleep', 'description' => 'Cortisol from poor sleep and stress contributes to visceral fat'],
+              ];
+
+        return [
+            'key'          => 'visceral_fat',
+            'label'        => 'Visceral Fat',
+            'unit'         => '',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => 1,
+                'max'     => (int) ($ranges['visceral_fat_elevated_min'] - 1),
+                'context' => "Elevated from level {$ranges['visceral_fat_elevated_min']}, high from level {$ranges['visceral_fat_high_min']}",
+            ],
+            'observation'  => $this->buildTrendObservation('Visceral Fat', $before, $after, $absChange, ''),
+            'rule_applied' => "IF visceral fat level >= {$ranges['visceral_fat_high_min']} → high severity\n"
+                            . "IF visceral fat level >= {$ranges['visceral_fat_elevated_min']} → moderate severity\n"
+                            . "ELSE → low severity\n"
+                            . "Thresholds from config/recommendations.php → visceral_fat",
+            'conclusion'      => $conclusion,
+            'recommendations' => $recs,
+            'data_points'     => $measurements
+                ->filter(fn ($m) => $m->visceral_fat !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->visceral_fat])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightWeight($first, $last, $measurements, ?float $heightM): ?array
+    {
+        if ($first->weight_kg === null || $last->weight_kg === null) return null;
+
+        $before    = (float) $first->weight_kg;
+        $after     = (float) $last->weight_kg;
+        $absChange = round($after - $before, 2);
+        $direction = $this->trendDirection($absChange);
+        $gainThreshold = config('recommendations.weight_trend.gain_threshold_kg', 2.0);
+
+        $severity = match (true) {
+            $absChange > ($gainThreshold * 2) => 'high',
+            $absChange > $gainThreshold       => 'moderate',
+            default                           => 'low',
+        };
+
+        $normalMin = $heightM ? round(18.5 * $heightM * $heightM, 1) : null;
+        $normalMax = $heightM ? round(25.0 * $heightM * $heightM, 1) : null;
+
+        $conclusion = match ($direction) {
+            'up'    => "Your weight has increased by {$absChange} kg over this period. This could indicate a caloric surplus, water retention, or changes in exercise routine. " . ($absChange > $gainThreshold ? 'Review portion sizes and total daily calorie intake.' : 'Monitor this trend over the next period before making changes.'),
+            'down'  => "Your weight has decreased by " . abs($absChange) . " kg over this period. If the pace is gradual, this is generally positive. Ensure adequate protein intake to preserve lean muscle mass.",
+            default => 'Your weight has remained stable over this period, suggesting your current habits are consistent.',
+        };
+
+        return [
+            'key'          => 'weight_kg',
+            'label'        => 'Weight',
+            'unit'         => ' kg',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => $normalMin,
+                'max'     => $normalMax,
+                'context' => $heightM ? 'Based on BMI 18.5–25 range for your height' : 'Set height in your profile for personalised range',
+            ],
+            'observation'  => $this->buildTrendObservation('Weight', $before, $after, $absChange, ' kg'),
+            'rule_applied' => "IF weight gain > {$gainThreshold} kg in period → moderate severity\n"
+                            . "IF weight gain > " . ($gainThreshold * 2) . " kg in period → high severity\n"
+                            . "Threshold from config/recommendations.php → weight_trend.gain_threshold_kg",
+            'conclusion'      => $conclusion,
+            'recommendations' => $direction === 'up'
+                ? [
+                    ['icon' => '🥗', 'title' => 'Review Calorie Intake', 'description' => 'Your weight increase suggests a dietary adjustment may help'],
+                    ['icon' => '🏃', 'title' => 'Increase Exercise Frequency', 'description' => 'Add cardio sessions to support weight management'],
+                  ]
+                : [
+                    ['icon' => '🥩', 'title' => 'Maintain Protein Intake', 'description' => 'Adequate protein preserves lean mass during weight changes'],
+                    ['icon' => '💧', 'title' => 'Stay Hydrated', 'description' => 'Hydration supports healthy metabolism and body composition'],
+                  ],
+            'data_points' => $measurements
+                ->filter(fn ($m) => $m->weight_kg !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->weight_kg])
+                ->values()->all(),
+        ];
+    }
+
+    // ─── Trend helpers ────────────────────────────────────────────────────────
+
+    private function trendDirection(float $absChange): string
+    {
+        if ($absChange > 0.05) return 'up';
+        if ($absChange < -0.05) return 'down';
+        return 'stable';
+    }
+
+    private function buildTrendObservation(string $label, float $before, float $after, float $absChange, string $unit): string
+    {
+        if (abs($absChange) <= 0.05) {
+            return "{$label} remained stable at {$after}{$unit}";
+        }
+        $sign = $absChange > 0 ? '+' : '';
+        return "{$label} " . ($absChange > 0 ? 'increased' : 'decreased') . " from {$before}{$unit} to {$after}{$unit} ({$sign}{$absChange}{$unit})";
+    }
+
+    private function trendSummary(array $insights, int $count): string
+    {
+        $high     = array_filter($insights, fn ($i) => $i['severity'] === 'high');
+        $moderate = array_filter($insights, fn ($i) => $i['severity'] === 'moderate');
+
+        $parts = [];
+        if ($high) $parts[] = implode(' and ', array_column($high, 'label')) . ' require' . (count($high) === 1 ? 's' : '') . ' immediate attention';
+        if ($moderate) $parts[] = implode(' and ', array_column($moderate, 'label')) . ' show' . (count($moderate) === 1 ? 's' : '') . ' a trend worth monitoring';
+        if (!$parts) $parts[] = 'all tracked metrics are within acceptable ranges';
+
+        return '📊 Overall: ' . implode(', and ', $parts) . ". Based on {$count} measurement" . ($count === 1 ? '' : 's') . ' over the selected period.';
+    }
+
+    private function trendAIInsight(array $insights): string
+    {
+        $high     = collect($insights)->firstWhere('severity', 'high');
+        $moderate = collect($insights)->firstWhere('severity', 'moderate');
+
+        if ($high) return "Focus on addressing {$high['label']} first, as it shows the most significant change relative to your personalised thresholds. Consistent adjustments to both exercise frequency and dietary habits over the next 2–4 weeks will be key.";
+        if ($moderate) return "Your metrics are generally manageable. Keep an eye on {$moderate['label']} and make gradual adjustments rather than drastic changes.";
+        return 'Your metrics are trending positively based on your personalised wellness thresholds. Maintain your current routine and continue logging measurements regularly.';
+    }
+
+    // ─── Existing syncForUser continues below ────────────────────────────────
+
     public function syncForUser(User $user): array
     {
         $recentMeasurements = $user->bodyCompositions()

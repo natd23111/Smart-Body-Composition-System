@@ -106,40 +106,6 @@
       <RouterView />
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300 py-12 mt-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
-          <div>
-            <h4 class="font-semibold text-white mb-4">Product</h4>
-            <ul class="space-y-2">
-              <li><a href="#" class="hover:text-green-400 transition-colors">Features</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Pricing</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Security</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 class="font-semibold text-white mb-4">Support</h4>
-            <ul class="space-y-2">
-              <li><a href="#" class="hover:text-green-400 transition-colors">Help Center</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Contact</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Status</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 class="font-semibold text-white mb-4">Company</h4>
-            <ul class="space-y-2">
-              <li><a href="#" class="hover:text-green-400 transition-colors">About</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Blog</a></li>
-              <li><a href="#" class="hover:text-green-400 transition-colors">Careers</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="border-t border-gray-800 pt-8 text-sm">
-          <p>&copy; 2026 BodyComposition System. All rights reserved.</p>
-        </div>
-      </div>
-    </footer>
   </div>
 </template>
 

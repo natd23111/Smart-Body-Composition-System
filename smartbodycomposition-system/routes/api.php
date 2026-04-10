@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BodyCompositionController;
 use App\Http\Controllers\HealthRecommendationController;
+use App\Http\Controllers\TrendsController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 
@@ -147,6 +148,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Body Composition
     Route::apiResource('body-compositions', BodyCompositionController::class);
+
+    // Trends
+    Route::get('trends', [TrendsController::class, 'index']);
 
     // Recommendations
     Route::get('recommendations', [HealthRecommendationController::class, 'index']);
