@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Generate 30 days of body composition data for user ID 3
-        $this->seedBodyCompositionsForUser(3, 30);
+        $this->seedBodyCompositionsForUser(1, 30);
     }
 
     /**

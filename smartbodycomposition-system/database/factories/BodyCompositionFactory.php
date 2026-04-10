@@ -18,56 +18,39 @@ class BodyCompositionFactory extends Factory
      */
     public function definition(): array
     {
-        // 30-day realistic dataset for a single user
+        // 30-day deterministic progression trending from obese toward overweight.
         static $day = 0;
-        $dataset = [
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1350, 18, 1.0],
-            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1352, 18, 1.0],
-            [52.9, 9.3, 4.92, 59.5, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [53.0, 9.4, 4.98, 59.4, 45.5, 7, 2.5, 1353, 18, 1.0],
-            [52.7, 9.2, 4.85, 59.8, 45.2, 7, 2.5, 1349, 18, 1.0],
-            [52.8, 9.3, 4.90, 59.6, 45.3, 7, 2.5, 1350, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.7, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [53.1, 9.4, 4.98, 59.5, 45.6, 7, 2.5, 1354, 18, 1.0],
-            [53.0, 9.3, 4.93, 59.6, 45.5, 7, 2.5, 1352, 18, 1.0],
-            [52.8, 9.2, 4.86, 59.8, 45.3, 7, 2.5, 1350, 18, 1.0],
-            [52.7, 9.1, 4.80, 59.9, 45.2, 7, 2.5, 1348, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.7, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
-            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
-            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
-            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
-            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [53.0, 9.4, 4.98, 59.5, 45.5, 7, 2.5, 1353, 18, 1.0],
-            [53.1, 9.5, 5.05, 59.4, 45.6, 7, 2.5, 1355, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-            [52.8, 9.2, 4.86, 59.7, 45.3, 7, 2.5, 1350, 18, 1.0],
-            [52.7, 9.1, 4.80, 59.8, 45.2, 7, 2.5, 1348, 18, 1.0],
-            [52.9, 9.3, 4.91, 59.6, 45.4, 7, 2.5, 1351, 18, 1.0],
-        ];
-        $entry = $dataset[$day % 30];
+        $index = $day % 30;
+        $progress = $index / 29;
+        $wave = sin($index / 3) * 0.18;
+
+        $weightKg = round(89.4 - (4.6 * $progress) + $wave, 1);
+        $bodyFatPercent = round(35.2 - (3.8 * $progress) + ($wave * 0.35), 1);
+        $bodyFatKg = round($weightKg * ($bodyFatPercent / 100), 2);
+        $bodyWaterPercent = round(44.8 + (2.4 * $progress) - ($wave * 0.25), 1);
+        $muscleMass = round(49.6 + (0.9 * $progress) - abs($wave * 0.2), 1);
+        $physicalRating = min(5, max(2, (int) round(2 + (3 * $progress))));
+        $boneMass = round(3.2 + ($progress * 0.1), 1);
+        $kcal = (int) round(2210 - (110 * $progress) + ($wave * 8));
+        $bmr = (int) round(1765 - (85 * $progress) + ($wave * 6));
+        $visceralFat = round(14.6 - (3.1 * $progress) + ($wave * 0.25), 1);
+
         $day++;
+
         return [
             'user_id' => User::factory(),
             'measurement_date' => now()->subDays(30 - $day),
             'measurement_time' => '08:00',
-            'weight_kg' => $entry[0],
-            'body_fat_percent' => $entry[1],
-            'body_fat_kg' => $entry[2],
-            'body_water_percent' => $entry[3],
-            'muscle_mass' => $entry[4],
-            'physical_rating' => $entry[5],
-            'bone_mass' => $entry[6],
-            'kcal' => $entry[7],
-            'bmr' => $entry[8],
-            'visceral_fat' => $entry[9],
+            'weight_kg' => $weightKg,
+            'body_fat_percent' => $bodyFatPercent,
+            'body_fat_kg' => $bodyFatKg,
+            'body_water_percent' => $bodyWaterPercent,
+            'muscle_mass' => $muscleMass,
+            'physical_rating' => $physicalRating,
+            'bone_mass' => $boneMass,
+            'kcal' => $kcal,
+            'bmr' => $bmr,
+            'visceral_fat' => $visceralFat,
         ];
     }
 

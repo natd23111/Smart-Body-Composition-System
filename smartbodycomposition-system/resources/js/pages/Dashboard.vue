@@ -35,9 +35,9 @@
             <h3 class="text-sm font-semibold text-gray-700">Weight</h3>
             <div :class="[
               'p-2 rounded-lg',
-              currentData.weight < previousData.weight ? 'bg-green-100' : 'bg-orange-100'
+              currentData.weight_kg < previousData.weight_kg ? 'bg-green-100' : 'bg-orange-100'
             ]">
-              <svg v-if="currentData.weight < previousData.weight" class="h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg v-if="currentData.weight_kg < previousData.weight_kg" class="h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                 <polyline points="17 18 23 18 23 12"></polyline>
               </svg>
@@ -163,12 +163,16 @@
             </div>
           </div>
           <div class="p-6">
-            <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
-              <div class="text-center">
-                <p class="text-gray-500 text-sm">📊 Chart will display here</p>
-                <p class="text-gray-400 text-xs mt-2">(Install chart library for visualization)</p>
-              </div>
-            </div>
+            <MetricLineChart
+              :labels="weightChart.labels"
+              :values="weightChart.values"
+              label="Weight"
+              color="#16a34a"
+              fill-color="rgba(34, 197, 94, 0.18)"
+              unit="kg"
+              empty-title="No weight records in this time range"
+              empty-subtitle="Add more measurements to see your weight trend"
+            />
           </div>
         </div>
 
@@ -190,15 +194,19 @@
             </div>
           </div>
           <div class="p-6">
-            <div class="h-56 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200 mb-4">
-              <div class="text-center">
-                <p class="text-gray-500 text-sm">📊 Chart will display here</p>
-                <p class="text-gray-400 text-xs mt-2">(Install chart library for visualization)</p>
-              </div>
-            </div>
+            <MetricLineChart
+              :labels="muscleChart.labels"
+              :values="muscleChart.values"
+              label="Muscle Mass"
+              color="#059669"
+              fill-color="rgba(16, 185, 129, 0.18)"
+              unit="kg"
+              empty-title="No muscle mass records in this time range"
+              empty-subtitle="Log muscle measurements to view this chart"
+            />
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Physical Rating</span>
-              <span class="font-medium text-green-600">Excellent</span>
+              <span class="font-medium text-green-600">{{ currentData.physical_rating || '-' }}</span>
             </div>
           </div>
         </div>
@@ -220,12 +228,16 @@
             </div>
           </div>
           <div class="p-6">
-            <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
-              <div class="text-center">
-                <p class="text-gray-500 text-sm">📊 Chart will display here</p>
-                <p class="text-gray-400 text-xs mt-2">(Install chart library for visualization)</p>
-              </div>
-            </div>
+            <MetricLineChart
+              :labels="bodyFatChart.labels"
+              :values="bodyFatChart.values"
+              label="Body Fat"
+              color="#d97706"
+              fill-color="rgba(245, 158, 11, 0.18)"
+              unit="%"
+              empty-title="No body fat records in this time range"
+              empty-subtitle="Record body fat measurements to view the trend"
+            />
           </div>
         </div>
 
@@ -465,6 +477,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import MetricLineChart from '../components/MetricLineChart.vue'
 import { getUserProfile } from '../services/authService'
 
 const timeRange = ref('1M')
@@ -576,6 +589,26 @@ const filteredRecords = computed(() => {
     return record.measurement_date >= startDate.value && record.measurement_date <= endDate.value
   })
 })
+
+const formatChartLabel = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const buildMetricChart = (key) => {
+  const chartRecords = data.value.filter(record => typeof record[key] === 'number' && !Number.isNaN(record[key]))
+
+  return {
+    labels: chartRecords.map(record => formatChartLabel(record.measurement_date)),
+    values: chartRecords.map(record => Number(record[key].toFixed(1))),
+  }
+}
+
+const weightChart = computed(() => buildMetricChart('weight_kg'))
+const muscleChart = computed(() => buildMetricChart('muscle_mass'))
+const bodyFatChart = computed(() => buildMetricChart('body_fat_percent'))
 
 // Methods
 const loadMeasurements = async () => {
