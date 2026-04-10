@@ -1,11 +1,11 @@
 <template>
   <div class="space-y-6">
     <!-- Header with Time Range Selector -->
-    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg shadow border border-green-200">
+    <div class="bg-gradient-to-r from-gray-50 rounded-lg shadow border border-gray-200">
       <div class="p-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 class="text-3xl font-bold text-green-900">Health Dashboard</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Health Dashboard</h1>
             <p class="text-gray-600 text-sm">Track your progress and health metrics over time</p>
           </div>
           <div class="flex gap-2 flex-wrap">
@@ -434,70 +434,6 @@
               </div>
               <div class="p-3 bg-gray-50 text-xs text-gray-600 border-t border-gray-200">
                 {{ filteredRecords.length }} records found in selected date range
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Health Recommendations -->
-      <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg shadow border border-green-200">
-        <div class="border-b border-green-200 p-6">
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-green-100 rounded-lg">
-              <svg class="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold text-gray-900">Health Recommendations</h3>
-              <p class="text-sm text-gray-600">Personalized suggestions based on your metrics</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-6">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-green-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-green-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Stay Hydrated</p>
-                <p class="text-xs text-gray-600 mt-1">Aim for 8 glasses of water daily to maintain optimal body function.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-green-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-green-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Maintain Your Progress</p>
-                <p class="text-xs text-gray-600 mt-1">You're on track with your weight goals. Keep up the great work!</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-green-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-green-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Regular Exercise</p>
-                <p class="text-xs text-gray-600 mt-1">30 minutes of moderate activity helps maintain muscle mass.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-blue-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Sleep Quality</p>
-                <p class="text-xs text-gray-600 mt-1">Aim for 7-9 hours of quality sleep to support recovery.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-blue-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Balanced Nutrition</p>
-                <p class="text-xs text-gray-600 mt-1">Focus on whole foods, proteins, and healthy carbohydrates.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3 p-4 bg-white rounded-lg border border-blue-100 hover:shadow-sm transition-shadow">
-              <div class="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0"></div>
-              <div>
-                <p class="font-medium text-sm text-gray-900">Track Progress</p>
-                <p class="text-xs text-gray-600 mt-1">Update your measurements weekly for better insights.</p>
               </div>
             </div>
           </div>

@@ -3,7 +3,7 @@
     <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Recommendations</h2>
-        <p class="text-gray-600">Personalized recommendations linked to backend templates and matched against your latest metrics.</p>
+        <p class="text-gray-600">Personalized recommendations based on your body composition data.</p>
       </div>
     </div>
 
@@ -89,12 +89,6 @@
 
         <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
           <span class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ recommendation.priority }} priority</span>
-          <button
-            @click.stop="openRecommendation(recommendation)"
-            class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Open Card
-          </button>
         </div>
       </div>
     </div>
