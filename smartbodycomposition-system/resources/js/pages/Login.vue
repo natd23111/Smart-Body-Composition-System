@@ -135,12 +135,12 @@
 
             <!-- Forgot Password Link -->
             <div class="text-center">
-              <button
-                type="button"
+              <router-link
+                to="/forgot-password"
                 class="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
               >
                 Forgot your password?
-              </button>
+              </router-link>
             </div>
           </form>
 

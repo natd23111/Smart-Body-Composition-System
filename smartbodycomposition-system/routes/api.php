@@ -72,6 +72,74 @@ Route::post('/logout', function (Request $request) {
     return response()->json(['message' => 'Logged out']);
 })->middleware('auth:sanctum');
 
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate(['email' => 'required|email']);
+
+    $user = \App\Models\User::where('email', $request->email)->first();
+
+    // Always return success to avoid email enumeration
+    if (!$user) {
+        return response()->json(['message' => 'If that email exists, a reset link has been sent.']);
+    }
+
+    $token = \Illuminate\Support\Str::random(64);
+
+    \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+        ['email' => $request->email],
+        ['token' => hash('sha256', $token), 'created_at' => now()]
+    );
+
+    $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
+
+    \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $resetUrl) {
+        $message->to($user->email, $user->name)
+            ->subject('Reset Your Password — Smart Body Composition')
+            ->html(
+                '<p>Hi ' . htmlspecialchars($user->name) . ',</p>' .
+                '<p>You requested a password reset. Click the link below to set a new password. ' .
+                'This link expires in 60 minutes.</p>' .
+                '<p><a href="' . $resetUrl . '" style="background:#16a34a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Reset Password</a></p>' .
+                '<p>If you did not request this, you can ignore this email.</p>'
+            );
+    });
+
+    return response()->json(['message' => 'If that email exists, a reset link has been sent.']);
+});
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token'                 => 'required|string',
+        'email'                 => 'required|email',
+        'password'              => 'required|string|min:8|confirmed',
+    ]);
+
+    $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+        ->where('email', $request->email)
+        ->first();
+
+    if (!$record || !hash_equals($record->token, hash('sha256', $request->token))) {
+        return response()->json(['error' => 'Invalid or expired reset token.'], 422);
+    }
+
+    if (now()->diffInMinutes($record->created_at) > 60) {
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        return response()->json(['error' => 'This reset link has expired. Please request a new one.'], 422);
+    }
+
+    $user = \App\Models\User::where('email', $request->email)->first();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not found.'], 422);
+    }
+
+    $user->update(['password' => bcrypt($request->password)]);
+    $user->tokens()->delete(); // Invalidate all existing sessions
+
+    \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+    return response()->json(['message' => 'Password reset successfully. You can now log in.']);
+});
+
 // User Profile Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile', function (Request $request) {

@@ -1,8 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authPiniaStore'
 import MainLayout from '@/layouts/MainLayout.vue'
+import Home from '@/pages/Home.vue'
 import Login from '@/pages/Login.vue'
 import Register from '@/pages/Register.vue'
+import ForgotPassword from '@/pages/ForgotPassword.vue'
+import ResetPassword from '@/pages/ResetPassword.vue'
+import ProfileSetup from '@/pages/ProfileSetup.vue'
 import Dashboard from '@/pages/Dashboard.vue'
 import BodyComposition from '@/pages/BodyComposition.vue'
 import Recommendations from '@/pages/Recommendations.vue'
@@ -13,7 +17,7 @@ import Settings from '@/pages/Settings.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: '/home',
   },
   {
     path: '/login',
@@ -28,10 +32,34 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPassword,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPassword,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/profile-setup',
+    name: 'profile-setup',
+    component: ProfileSetup,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     component: MainLayout,
     meta: { requiresAuth: true },
     children: [
+      {
+        path: 'home',
+        name: 'home',
+        component: Home,
+        meta: { requiresAuth: true }
+      },
       {
         path: 'dashboard',
         name: 'dashboard',

@@ -21,6 +21,7 @@
     </div>
 
     <template v-else>
+      <div :class="{ 'opacity-50 pointer-events-none': transitioning }" class="transition-opacity duration-300 space-y-6">
       <!-- Overall Summary Card -->
       <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-3">Your Health Summary</h3>
@@ -200,6 +201,7 @@
           </div>
         </div>
       </div>
+      </div>
     </template>
 
     <!-- Error -->
@@ -224,7 +226,6 @@ import api from '@/services/api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PERIODS = [
   { label: '1 Week',   value: 7 },
@@ -233,17 +234,16 @@ const PERIODS = [
   { label: '3 Months', value: 90 },
 ]
 
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const loading     = ref(true)
+const transitioning = ref(false)
 const error       = ref('')
 const insights    = ref([])
 const meta        = ref({ has_data: false, measurement_count: 0, summary: '', ai_insight: '' })
-const selectedPeriod = ref(14)
+const selectedPeriod = ref(7)
 const selectedMetric = ref('all')
 const expandedId  = ref(null)
 
-// â”€â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const metricOptions = computed(() =>
   insights.value.map(i => ({ key: i.key, label: i.label }))
@@ -258,11 +258,14 @@ const filteredInsights = computed(() => {
   return [...list].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3))
 })
 
-// â”€â”€â”€ Data Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-async function loadTrends() {
-  loading.value = true
-  error.value   = ''
+async function loadTrends(isPeriodSwitch = false) {
+  if (isPeriodSwitch) {
+    transitioning.value = true
+  } else {
+    loading.value = true
+  }
+  error.value = ''
   try {
     const response = await api.get(`/trends?period=${selectedPeriod.value}`)
     insights.value = response.data.data  ?? []
@@ -271,17 +274,16 @@ async function loadTrends() {
     error.value = e.response?.data?.message || e.message || 'Failed to load trend data.'
   } finally {
     loading.value = false
+    transitioning.value = false
   }
 }
 
 watch(selectedPeriod, () => {
   expandedId.value = null
-  loadTrends()
+  loadTrends(true)
 })
 
 onMounted(loadTrends)
-
-// â”€â”€â”€ Chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const chartOptions = {
   responsive: true,
@@ -311,8 +313,6 @@ function buildChartData(insight) {
     }],
   }
 }
-
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })

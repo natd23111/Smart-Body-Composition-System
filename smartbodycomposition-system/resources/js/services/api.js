@@ -36,6 +36,12 @@ export const authService = {
 
   logout: () =>
     api.post('/logout'),
+
+  forgotPassword: (email) =>
+    api.post('/forgot-password', { email }),
+
+  resetPassword: (token, email, password, password_confirmation) =>
+    api.post('/reset-password', { token, email, password, password_confirmation }),
 };
 
 // ==================== BODY COMPOSITION ENDPOINTS ====================

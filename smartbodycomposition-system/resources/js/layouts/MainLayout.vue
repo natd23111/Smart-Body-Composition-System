@@ -157,21 +157,22 @@ const isAdmin = computed(() => {
 // Regular user tabs
 const regularUserTabs = [
   {
+    name: 'home',
+    label: 'Home',
+    path: '/home',
+    icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>'
+  },
+  {
     name: 'dashboard',
     label: 'Dashboard',
     path: '/dashboard',
-    icon: '<circle cx="12" cy="12" r="1"></circle><path d="M12 1v6m4.22-4.22-4.24 4.24M12 23v-6m4.22 4.22-4.24-4.24M23 12h-6m4.22 4.22-4.24-4.24M1 12h6M4.22 16.22l4.24-4.24"></path>'
+    icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>'
   },
   {
     name: 'body-composition',
     label: 'Body Composition',
     path: '/body-composition',
-    icon: '<path fill-rule="evenodd" clip-rule="evenodd" d="M14 19C14 18.4477 14.4477 18 15 18H33C33.5523 18 34 18.4477 34 19V34C34 34.5523 33.5523 35 33 35H15C14.4477 35 14 34.5523 14 34V19ZM16 25V28H20V25H16ZM16 33V30H20V33H16ZM22 33V30H26V33H22ZM28 33V30H32V33H28ZM28 25V28H32V25H28ZM22 28H26V25H22V28ZM16 23H32V20H16V23Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M10 5C10 4.44772 10.4477 4 11 4H31C31.2652 4 31.5196 4.10536 31.7071 4.29289L37.7071 10.2929C37.8946 10.4804 38 10.7348 38 11V43C38 43.5523 37.5523 44 37 44H11C10.4477 44 10 43.5523 10 43V5ZM12 6V42H36V12H31C30.4477 12 30 11.5523 30 11V6H12ZM32 7.41421V10H34.5858L32 7.41421Z" fill="currentColor"/>',
-    iconViewBox: '0 0 48 48',
-    iconFill: 'none',
-    iconStroke: 'none',
-    iconStrokeWidth: '0',
-    iconClass: 'h-[18px] w-[18px]'
+    icon: '<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>'
   },
   {
     name: 'recommendations',
@@ -189,7 +190,7 @@ const regularUserTabs = [
     name: 'trends',
     label: 'Trends',
     path: '/trends',
-    icon: '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline>'
+    icon: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>'
   }
 ]
 

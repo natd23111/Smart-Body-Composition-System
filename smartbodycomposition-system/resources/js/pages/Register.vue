@@ -366,11 +366,11 @@ const handleRegister = async () => {
     }
     authStore.isAuthenticated = true
 
-    success.value = 'Account created successfully! Redirecting to dashboard...'
+    success.value = 'Account created successfully! Setting up your profile...'
 
-    // Redirect to dashboard after 1.5 seconds
+    // Redirect to profile setup after 1.5 seconds
     setTimeout(() => {
-      router.push('/dashboard')
+      router.push('/profile-setup')
     }, 1500)
   } catch (err) {
     console.error('Registration error:', err)
