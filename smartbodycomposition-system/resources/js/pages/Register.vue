@@ -358,12 +358,13 @@ const handleRegister = async () => {
     console.log('Registration successful:', newUser)
 
     // Update auth store with new user
-    authStore.user.value = {
+    authStore.user = {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
     }
+    authStore.isAuthenticated = true
 
     success.value = 'Account created successfully! Redirecting to dashboard...'
 

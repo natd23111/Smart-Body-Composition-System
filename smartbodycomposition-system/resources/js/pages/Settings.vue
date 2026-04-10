@@ -42,22 +42,6 @@
 
     <!-- Personal Information Tab -->
     <div v-show="activeTab === 'personal'" class="space-y-6">
-      <!-- Profile Avatar Section -->
-      <div class="bg-white rounded-lg shadow border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">Profile Picture</h3>
-          <p class="text-sm text-gray-600 mt-1">Update your profile avatar</p>
-        </div>
-        <div class="px-6 py-4 flex items-center gap-6">
-          <div class="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0">
-            <svg class="h-12 w-12 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </div>
-          <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            Upload New Picture
-          </button>
-        </div>
-      </div>
 
       <!-- Basic Information -->
       <div class="bg-white rounded-lg shadow border border-gray-200">
@@ -193,10 +177,7 @@
               <p v-if="passwordErrors.confirm" class="text-xs text-red-600">{{ passwordErrors.confirm }}</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Password Save Button -->
+                <!-- Password Save Button -->
       <div class="flex justify-end gap-4">
         <button
           @click="passwords.current = ''; passwords.new = ''; passwords.confirm = ''; passwordErrors = {}"
@@ -217,6 +198,10 @@
           {{ savingPassword ? 'Saving...' : 'Change Password' }}
         </button>
       </div>
+        </div>
+      </div>
+
+
 
       <!-- Alert Messages -->
       <Transition name="fade">
@@ -301,28 +286,6 @@
               </select>
               <p class="text-xs text-gray-600 mt-1">Used for BMI calculations</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Language Settings -->
-      <div class="bg-white rounded-lg shadow border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">Language & Region</h3>
-          <p class="text-sm text-gray-600 mt-1">Set your preferred language</p>
-        </div>
-        <div class="px-6 py-6 space-y-4">
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-900">Language</label>
-            <select
-              v-model="systemPrefs.language"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="English">English</option>
-              <option value="Malay">Malay (Bahasa Malaysia)</option>
-              <option value="Chinese">Chinese (中文)</option>
-              <option value="Spanish">Spanish</option>
-            </select>
           </div>
         </div>
       </div>

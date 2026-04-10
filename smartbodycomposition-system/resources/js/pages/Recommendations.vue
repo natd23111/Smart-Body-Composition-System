@@ -81,7 +81,7 @@
                   {{ statusLabel(recommendation.status) }}
                 </span>
               </div>
-              <p class="text-xs text-gray-500 mb-3">{{ recommendation.template_code }} • {{ recommendation.recommendation_type }}</p>
+              <p class="text-xs text-gray-500 mb-3">{{ recommendation.recommendation_type }}</p>
               <p class="text-sm text-gray-600">{{ recommendation.summary }}</p>
             </div>
           </div>
@@ -98,7 +98,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">{{ selectedRecommendation.template_code }} • {{ selectedRecommendation.recommendation_type }}</p>
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">{{ selectedRecommendation.recommendation_type }}</p>
               <h3 class="text-xl font-bold text-gray-900">{{ selectedRecommendation.title }}</h3>
               <p class="text-sm text-gray-600 mt-2">{{ selectedRecommendation.summary }}</p>
             </div>
