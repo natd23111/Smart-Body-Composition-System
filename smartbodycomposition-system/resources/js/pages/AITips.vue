@@ -22,7 +22,7 @@
 
     <template v-else>
       <!-- Summary Stats -->
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div class="bg-white rounded-lg shadow border border-gray-200 p-6 text-center">
           <div class="text-2xl font-bold text-gray-900">{{ activeRecommendations.length }}</div>
           <p class="text-sm text-gray-500 mt-1">Active Recommendations</p>
@@ -31,22 +31,11 @@
           <div class="text-2xl font-bold text-red-600">{{ activeRecommendations.filter(r => r.priority === 'high').length }}</div>
           <p class="text-sm text-gray-500 mt-1">High Priority</p>
         </div>
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6 text-center">
-          <div class="text-2xl font-bold text-green-600">{{ activeRecommendations.filter(r => r.priority === 'low').length }}</div>
-          <p class="text-sm text-gray-500 mt-1">Positive Feedback</p>
-        </div>
       </div>
 
       <!-- Toolbar -->
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-end">
         <p class="text-sm text-gray-500">Last synced: {{ formatDate(meta.synced_at) }}</p>
-        <button
-          @click="generate"
-          :disabled="generating"
-          class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {{ generating ? 'Refreshing...' : '🔄 Refresh Recommendations' }}
-        </button>
       </div>
 
       <!-- Recommendation Cards -->
@@ -135,20 +124,6 @@
                 </div>
               </div>
 
-              <!-- Measurement snapshot -->
-              <div v-if="rec.measurement_snapshot">
-                <h4 class="font-semibold text-base mb-2 text-gray-900">📊 Measurement Used</h4>
-                <div class="bg-white p-3 rounded border border-blue-200">
-                  <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                    <template v-for="(val, key) in filteredSnapshot(rec.measurement_snapshot)" :key="key">
-                      <span class="text-gray-500">{{ snapshotLabel(key) }}</span>
-                      <span class="font-semibold text-gray-900">{{ val ?? '—' }}</span>
-                    </template>
-                  </div>
-                  <p class="text-xs text-gray-400 mt-2 border-t pt-2">Date: {{ rec.measurement_snapshot.measurement_date }}</p>
-                </div>
-              </div>
-
               <!-- Confidence badge -->
               <div class="flex items-center gap-2 text-sm">
                 <span class="text-gray-600 font-medium">Confidence:</span>
@@ -170,7 +145,7 @@
       <div v-if="activeRecommendations.length === 0" class="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
         <div class="text-4xl mb-4">✨</div>
         <h3 class="text-xl font-semibold mb-2 text-gray-900">No Active Recommendations</h3>
-        <p class="text-gray-600">All recommendations have been dismissed. Click "Refresh Recommendations" to reload.</p>
+        <p class="text-gray-600">All tips have been dismissed. Reload the page to fetch fresh recommendations.</p>
       </div>
     </template>
 
@@ -184,10 +159,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getRecommendations, generateRecommendations, updateRecommendationStatus } from '@/services/authService'
+import { getRecommendations, updateRecommendationStatus } from '@/services/authService'
 
 const loading = ref(true)
-const generating = ref(false)
 const error = ref('')
 const recommendations = ref([])
 const meta = ref({ has_measurement: false })
@@ -209,22 +183,6 @@ const loadRecommendations = async () => {
     error.value = e.message || 'Failed to load recommendations.'
   } finally {
     loading.value = false
-  }
-}
-
-const generate = async () => {
-  generating.value = true
-  error.value = ''
-  try {
-    const result = await generateRecommendations()
-    recommendations.value = result.data ?? []
-    meta.value = result.meta ?? { has_measurement: false }
-    dismissedIds.value = new Set()
-    expandedId.value = null
-  } catch (e) {
-    error.value = e.message || 'Failed to refresh recommendations.'
-  } finally {
-    generating.value = false
   }
 }
 

@@ -134,16 +134,6 @@
             </ul>
           </div>
 
-          <div v-if="selectedRecommendation.metric_basis?.length">
-            <p class="text-sm font-semibold text-gray-900 mb-3">Why This Card Was Matched</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div v-for="metric in selectedRecommendation.metric_basis" :key="`${metric.label}-${metric.value}`" class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">{{ metric.label }}</p>
-                <p class="text-lg font-semibold text-gray-900">{{ metric.value }}</p>
-                <p class="text-sm text-gray-600 mt-2">{{ metric.insight }}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
