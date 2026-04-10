@@ -279,6 +279,79 @@ export function setAuthToken(token) {
   }
 }
 
+export async function getRecommendations() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch recommendations')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Failed to fetch recommendations. Please try again.')
+  }
+}
+
+export async function generateRecommendations() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/generate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to generate recommendations')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Failed to generate recommendations. Please try again.')
+  }
+}
+
+export async function updateRecommendationStatus(id, status) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/${id}/status`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update recommendation status')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Failed to update status. Please try again.')
+  }
+}
+
 export function getCurrentUser() {
   const user = localStorage.getItem('user')
   return user ? JSON.parse(user) : null

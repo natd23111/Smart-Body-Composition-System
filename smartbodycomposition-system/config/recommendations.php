@@ -62,5 +62,17 @@ return [
     ],
     'bmi' => [
         'secondary_context_min' => 27.0,
+        'underweight_max' => 18.5,
+    ],
+    'weight_trend' => [
+        'gain_threshold_kg' => 2.0,
+    ],
+    'physical_rating' => [
+        'low_max' => 3,
+    ],
+    'bone_mass' => [
+        'male'    => ['minimum_ratio' => 0.030],
+        'female'  => ['minimum_ratio' => 0.026],
+        'default' => ['minimum_ratio' => 0.028],
     ],
 ];

@@ -12,10 +12,13 @@ class RecommendationEngine
 
     public function syncForUser(User $user): array
     {
-        $latestMeasurement = $user->bodyCompositions()
+        $recentMeasurements = $user->bodyCompositions()
             ->orderByDesc('measurement_date')
             ->orderByDesc('created_at')
-            ->first();
+            ->take(2)
+            ->get();
+
+        $latestMeasurement = $recentMeasurements->first();
 
         if (!$latestMeasurement) {
             return [
@@ -32,12 +35,14 @@ class RecommendationEngine
             ];
         }
 
+        $previousMeasurement = $recentMeasurements->count() >= 2 ? $recentMeasurements->last() : null;
+
         $storedByTemplate = $this->mapStoredRecommendations($user->recommendations()->latest()->get());
         $profile = $this->resolveProfile($user);
         $referenceRanges = $this->resolveReferenceRanges($profile);
         $measurementSnapshot = $this->formatMeasurementSnapshot($user, $latestMeasurement, $profile);
 
-        $cards = collect($this->buildTemplatesForMeasurement($latestMeasurement, $measurementSnapshot, $profile, $referenceRanges))
+        $cards = collect($this->buildTemplatesForMeasurement($latestMeasurement, $previousMeasurement, $measurementSnapshot, $profile, $referenceRanges))
             ->map(function (array $template) use ($user, $storedByTemplate, $measurementSnapshot, $profile) {
                 $stored = $storedByTemplate->get($template['template_id']);
                 $existingRecord = $stored['record'] ?? null;
@@ -126,7 +131,7 @@ class RecommendationEngine
         return $this->serializeRecommendation($recommendation, $payload);
     }
 
-    private function buildTemplatesForMeasurement($measurement, array $snapshot, array $profile, array $ranges): array
+    private function buildTemplatesForMeasurement($measurement, $previousMeasurement, array $snapshot, array $profile, array $ranges): array
     {
         $templates = [];
 
@@ -135,6 +140,8 @@ class RecommendationEngine
         $muscleMass = $measurement->muscle_mass;
         $visceralFat = $measurement->visceral_fat;
         $weight = $measurement->weight_kg;
+        $boneMass = $measurement->bone_mass;
+        $physicalRating = $measurement->physical_rating;
         $muscleRatio = $weight && $muscleMass ? round(($muscleMass / $weight) * 100, 1) : null;
         $bmi = $snapshot['bmi'];
 
@@ -223,6 +230,114 @@ class RecommendationEngine
                 'priority' => 'medium',
                 'confidence' => 'medium',
                 'icon' => 'trending-up',
+            ];
+        }
+
+        // Rule: Weight gain trend (dietary)
+        if ($previousMeasurement !== null && $weight !== null && $previousMeasurement->weight_kg !== null) {
+            $weightDelta = round($weight - $previousMeasurement->weight_kg, 2);
+            $gainThreshold = config('recommendations.weight_trend.gain_threshold_kg', 2.0);
+
+            if ($weightDelta > $gainThreshold) {
+                $templates[] = [
+                    'template_id' => 'weight-gain-trend',
+                    'template_code' => 'TMPL-NUT-002',
+                    'recommendation_type' => 'Nutrition',
+                    'title' => 'Review Your Dietary Intake',
+                    'summary' => 'Your weight has increased by ' . $weightDelta . ' kg since your last measurement. This may indicate a caloric surplus worth reviewing.',
+                    'details' => [
+                        'Review portion sizes and total daily calorie intake relative to your activity level.',
+                        'Prioritise whole foods and reduce intake of highly processed, calorie-dense options.',
+                        'Focus on consistent eating patterns rather than making dramatic short-term cuts.',
+                        'Consider tracking meals for 1–2 weeks to identify key patterns.',
+                    ],
+                    'metric_basis' => [
+                        $this->metricBasis('Weight change', '+' . $weightDelta . ' kg', 'A gain of more than ' . $gainThreshold . ' kg since your last measurement triggers this recommendation.'),
+                        $this->metricBasis('Previous weight', $previousMeasurement->weight_kg . ' kg', 'Recorded in your previous measurement session.'),
+                        $this->metricBasis('Current weight', $weight . ' kg', 'Your most recently recorded weight.'),
+                    ],
+                    'priority' => $weightDelta > ($gainThreshold * 2) ? 'high' : 'medium',
+                    'confidence' => 'high',
+                    'icon' => 'trending-up',
+                ];
+            }
+        }
+
+        // Rule: Low physical rating (fitness foundation)
+        if ($physicalRating !== null && $physicalRating <= config('recommendations.physical_rating.low_max', 3)) {
+            $templates[] = [
+                'template_id' => 'fitness-foundation',
+                'template_code' => 'TMPL-FIT-001',
+                'recommendation_type' => 'Exercise',
+                'title' => 'Build a Structured Fitness Foundation',
+                'summary' => 'Your physical rating indicates a low current fitness level. Starting with consistent, low-intensity exercise is the most effective first step.',
+                'details' => [
+                    'Begin with 20–30 minute sessions of low-intensity cardio 3–4 times per week.',
+                    'Introduce light resistance exercises targeting major muscle groups twice per week.',
+                    'Prioritise consistency over intensity — showing up regularly matters more than training hard early on.',
+                    'Progress gradually by adding 5–10% volume or intensity every two weeks.',
+                ],
+                'metric_basis' => [
+                    $this->metricBasis('Physical rating', (string) $physicalRating, 'A rating of ' . config('recommendations.physical_rating.low_max', 3) . ' or below indicates a low fitness baseline.'),
+                    $this->metricBasis('Activity level', ucfirst($profile['activity_level']), 'Inferred from recent physical rating history.'),
+                ],
+                'priority' => 'high',
+                'confidence' => 'high',
+                'icon' => 'activity',
+            ];
+        }
+
+        // Rule: Low bone mass (dietary support)
+        if ($boneMass !== null && $weight !== null && $weight > 0) {
+            $boneRatioMin = config('recommendations.bone_mass.' . $profile['gender_key'] . '.minimum_ratio')
+                ?? config('recommendations.bone_mass.default.minimum_ratio', 0.028);
+            $boneRatio = round($boneMass / $weight, 4);
+
+            if ($boneRatio < $boneRatioMin) {
+                $templates[] = [
+                    'template_id' => 'bone-health',
+                    'template_code' => 'TMPL-NUT-003',
+                    'recommendation_type' => 'Nutrition',
+                    'title' => 'Support Bone Density Through Diet',
+                    'summary' => 'Your bone mass is below the reference level for your body weight. Nutritional support for bone density is beneficial at every age.',
+                    'details' => [
+                        'Ensure adequate calcium intake from dairy, leafy greens, or fortified foods.',
+                        'Maintain sufficient vitamin D levels through sunlight exposure and dietary sources.',
+                        'Include weight-bearing exercise such as walking, jogging, or resistance training regularly.',
+                        'Limit excessive sodium and caffeine, which can impair calcium absorption over time.',
+                    ],
+                    'metric_basis' => [
+                        $this->metricBasis('Bone mass', $boneMass . ' kg', 'Bone mass is evaluated relative to total body weight, not as an absolute figure.'),
+                        $this->metricBasis('Bone-to-weight ratio', round($boneRatio * 100, 1) . '%', 'Minimum reference ratio: ' . round($boneRatioMin * 100, 1) . '% based on gender.'),
+                    ],
+                    'priority' => 'medium',
+                    'confidence' => 'medium',
+                    'icon' => 'apple',
+                ];
+            }
+        }
+
+        // Rule: Underweight BMI (caloric/nutritional intake)
+        if ($bmi !== null && $bmi < config('recommendations.bmi.underweight_max', 18.5)) {
+            $templates[] = [
+                'template_id' => 'underweight-nutrition',
+                'template_code' => 'TMPL-NUT-004',
+                'recommendation_type' => 'Nutrition',
+                'title' => 'Increase Caloric and Nutritional Intake',
+                'summary' => 'Your BMI is below the general wellness threshold, which may indicate insufficient caloric intake or underlying nutritional needs.',
+                'details' => [
+                    'Increase total daily calorie intake through nutrient-dense foods rather than processed snacks.',
+                    'Prioritise protein, healthy fats, and complex carbohydrates at every meal.',
+                    'Eat more frequently — 4–5 smaller meals per day can help increase overall intake.',
+                    'Consider consulting a dietitian if healthy weight gain proves difficult over several weeks.',
+                ],
+                'metric_basis' => [
+                    $this->metricBasis('BMI', (string) $bmi, 'A BMI below ' . config('recommendations.bmi.underweight_max', 18.5) . ' is classified as underweight.'),
+                    $this->metricBasis('Weight', $weight . ' kg', 'Current weight used in BMI calculation alongside height.'),
+                ],
+                'priority' => 'high',
+                'confidence' => 'medium',
+                'icon' => 'apple',
             ];
         }
 
