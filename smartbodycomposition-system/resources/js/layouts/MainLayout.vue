@@ -4,7 +4,7 @@
     <nav class="sticky top-0 z-50 bg-white shadow border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-0 flex items-center justify-between">
         <!-- Logo -->
-        <div class="flex items-center gap-3 py-4">
+        <div class="flex items-center gap-3 py-4 cursor-pointer select-none" @click="scrollToTop">
           <div class="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg">
             <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -191,7 +191,7 @@ const regularUserTabs = [
     label: 'Trends',
     path: '/trends',
     icon: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>'
-  }
+  },
 ]
 
 // Admin-only tabs
@@ -227,6 +227,9 @@ const adminTabs = [
     icon: '<circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m4.22-1.22-4.24 4.24M12 23v-6m4.22 4.22-4.24-4.24M23 12h-6m4.22 4.22-4.24-4.24M1 12h6M4.22 16.22l4.24-4.24"></path>'
   }
 ]
+
+// Scroll to top when logo is clicked
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
 // Check if a tab is active
 const isActiveTab = (path) => {

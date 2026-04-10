@@ -12,6 +12,7 @@ import BodyComposition from '@/pages/BodyComposition.vue'
 import Recommendations from '@/pages/Recommendations.vue'
 import AITips from '@/pages/AITips.vue'
 import Trends from '@/pages/Trends.vue'
+import Goals from '@/pages/Goals.vue'
 import Settings from '@/pages/Settings.vue'
 
 const routes = [
@@ -91,6 +92,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'goals',
+        name: 'goals',
+        component: Goals,
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: Settings,
@@ -103,6 +110,9 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || '/'),
   routes,
+  scrollBehavior() {
+    return { top: 0, behavior: 'smooth' }
+  },
 })
 
 // Navigation guard for authentication
@@ -130,9 +140,9 @@ router.beforeEach((to, from, next) => {
     console.log('Redirecting to login - not authenticated')
     next('/login')
   } else if (to.path === '/login' && isAuthenticated) {
-    // Redirect to dashboard if already logged in
-    console.log('Already authenticated, redirecting to dashboard')
-    next('/dashboard')
+    // Redirect to home page if already logged in
+    console.log('Already authenticated, redirecting to home page')
+    next('/home')
   } else {
     next()
   }

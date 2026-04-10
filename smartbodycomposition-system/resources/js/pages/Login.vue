@@ -215,9 +215,9 @@ const handleLogin = async () => {
 
     success.value = 'Login successful! Redirecting...'
 
-    // Redirect to dashboard after 1 second
+    // Redirect to home page after 1 second
     setTimeout(() => {
-      router.push('/dashboard')
+      router.push('/home')
     }, 1000)
   } catch (err) {
     console.error('Login error:', err)

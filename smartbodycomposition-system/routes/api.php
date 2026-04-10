@@ -5,6 +5,7 @@ use App\Http\Controllers\BodyCompositionController;
 use App\Http\Controllers\HealthRecommendationController;
 use App\Http\Controllers\TrendsController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GoalController;
 use Illuminate\Http\Request;
 
 // Public Auth Routes
@@ -219,6 +220,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Trends
     Route::get('trends', [TrendsController::class, 'index']);
+
+    // Goals
+    Route::get('goals', [GoalController::class, 'index']);
+    Route::post('goals', [GoalController::class, 'store']);
+    Route::put('goals/{goal}', [GoalController::class, 'update']);
+    Route::delete('goals/{goal}', [GoalController::class, 'destroy']);
 
     // Recommendations
     Route::get('recommendations', [HealthRecommendationController::class, 'index']);

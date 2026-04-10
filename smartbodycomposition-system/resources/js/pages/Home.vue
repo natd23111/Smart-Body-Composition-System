@@ -102,25 +102,68 @@
       </div>
     </div>
 
-    <!-- Latest Metrics -->
-    <div v-if="latestRecord" class="bg-white rounded-lg shadow border border-gray-200">
-      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <!-- Your Goals -->
+    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100 shadow">
+      <div class="px-6 py-4 border-b border-blue-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
           <div>
-            <h3 class="font-semibold text-gray-900">Latest Measurements</h3>
-            <p class="text-xs text-gray-500">Recorded {{ latestRecordDate }}</p>
+            <h3 class="font-semibold text-gray-900">Your Goals</h3>
+            <p class="text-xs text-gray-500">Track your progress toward health objectives</p>
           </div>
         </div>
-        <router-link to="/dashboard" class="text-sm text-green-600 hover:text-green-700 font-medium">
-          Full Dashboard &rarr;
-        </router-link>
+        <div class="flex items-center gap-3">
+          <router-link to="/goals" class="text-sm text-blue-600 hover:text-blue-700 font-medium">View all &rarr;</router-link>
+        </div>
       </div>
-      <div class="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div v-for="metric in latestMetrics" :key="metric.label" class="text-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-          <p class="text-xs text-gray-500 mb-1">{{ metric.label }}</p>
-          <p class="text-2xl font-bold text-gray-900">{{ metric.value }}</p>
-          <p class="text-xs text-gray-400">{{ metric.unit }}</p>
+
+      <!-- Loading skeleton -->
+      <div v-if="loadingGoals" class="px-6 py-4 space-y-1">
+        <div v-for="n in 3" :key="n" class="animate-pulse py-3 border-b border-blue-100 last:border-b-0 space-y-2">
+          <div class="flex justify-between">
+            <div class="h-3 bg-blue-200 rounded w-1/3"></div>
+            <div class="h-3 bg-blue-200 rounded w-1/5"></div>
+          </div>
+          <div class="h-2 bg-blue-200 rounded-full w-full"></div>
+          <div class="h-2 bg-blue-100 rounded w-1/4"></div>
+        </div>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="activeGoals.length === 0" class="px-6 py-10 text-center">
+        <svg class="h-10 w-10 text-blue-300 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+        <p class="text-gray-500 text-sm mb-3">No active goals yet. Set your first health goal!</p>
+        <button
+          @click="openGoalModal"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add your first goal
+        </button>
+      </div>
+
+      <!-- Goals list -->
+      <div v-else class="px-6 py-4 divide-y divide-blue-100">
+        <div
+          v-for="goal in activeGoals.slice(0, 5)"
+          :key="goal.id"
+          class="py-3 first:pt-0 last:pb-0"
+        >
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-gray-800">
+              Target {{ goal.metric_label }}: {{ goal.target_value }}{{ goal.metric_unit ? ' ' + goal.metric_unit : '' }}
+            </span>
+            <span class="text-sm font-semibold text-blue-600">
+              {{ goal.progress !== null ? goal.progress + '% Complete' : '—' }}
+            </span>
+          </div>
+          <div class="w-full bg-blue-100 rounded-full h-2 mb-1">
+            <div
+              :style="{ width: (goal.progress !== null ? Math.min(goal.progress, 100) : 0) + '%' }"
+              class="bg-blue-500 h-2 rounded-full transition-all duration-500"
+            ></div>
+          </div>
+          <p class="text-xs text-gray-400">{{ goalHintText(goal) }}</p>
         </div>
       </div>
     </div>
@@ -170,6 +213,79 @@
       </div>
     </div>
 
+    <!-- Add Goal Modal -->
+    <Teleport to="body">
+      <div v-if="showGoalModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showGoalModal = false"></div>
+        <div class="relative w-full max-w-md bg-white rounded-xl shadow-xl">
+          <!-- Header -->
+          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Add a New Goal</h3>
+            <button @click="showGoalModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <!-- Body -->
+          <div class="px-6 py-5 space-y-4">
+            <p v-if="goalFormErrors.general" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ goalFormErrors.general }}</p>
+            <!-- Metric -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Health Metric</label>
+              <select v-model="goalForm.metric" :class="['w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500', goalFormErrors.metric ? 'border-red-400' : 'border-gray-300']">
+                <option value="" disabled>Select a metric</option>
+                <option v-for="m in GOAL_METRICS" :key="m.value" :value="m.value">{{ m.label }}{{ m.unit ? ' (' + m.unit + ')' : '' }}</option>
+              </select>
+              <p v-if="goalFormErrors.metric" class="text-xs text-red-500 mt-1">{{ goalFormErrors.metric }}</p>
+            </div>
+            <!-- Target Value -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Target Value<span v-if="selectedGoalUnit" class="text-gray-400 font-normal"> ({{ selectedGoalUnit }})</span>
+              </label>
+              <input
+                v-model="goalForm.target_value"
+                type="number"
+                step="0.1"
+                :class="['w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500', goalFormErrors.target_value ? 'border-red-400' : 'border-gray-300']"
+              />
+              <p v-if="goalFormErrors.target_value" class="text-xs text-red-500 mt-1">{{ goalFormErrors.target_value }}</p>
+            </div>
+            <!-- Deadline (optional) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Target Date <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input
+                v-model="goalForm.deadline"
+                type="date"
+                :min="tomorrowDate"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <!-- Notes (optional) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Notes <span class="text-gray-400 font-normal">(optional)</span></label>
+              <textarea
+                v-model="goalForm.notes"
+                rows="2"
+                placeholder="e.g. Goal for my birthday..."
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              ></textarea>
+            </div>
+          </div>
+          <!-- Footer -->
+          <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+            <button @click="showGoalModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+            <button
+              @click="saveGoal"
+              :disabled="savingGoal"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {{ savingGoal ? 'Saving...' : 'Save Goal' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -177,15 +293,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authPiniaStore'
 import { useUnitStore } from '@/stores/unitStore'
-import { bodyCompositionService, healthRecommendationService } from '@/services/api'
+import { bodyCompositionService, healthRecommendationService, goalService } from '@/services/api'
 
 const authStore = useAuthStore()
 const unitStore = useUnitStore()
 
 const loadingActivity = ref(true)
 const loadingTips = ref(true)
+const loadingGoals = ref(true)
 const recentRecords = ref([])
 const tipsFromBackend = ref([])
+const goalsData = ref([])
 
 // ─── Computed ──────────────────────────────────────────────────────────────
 
@@ -210,23 +328,71 @@ const sortedRecords = computed(() =>
 
 const latestRecord = computed(() => sortedRecords.value[0] ?? null)
 
-const latestRecordDate = computed(() => {
-  if (!latestRecord.value) return ''
-  return new Date(parseLocalDate(latestRecord.value.measurement_date || latestRecord.value.created_at)).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  })
+const activeGoals = computed(() => goalsData.value.filter(g => g.status === 'active'))
+
+// ─── Goal Management (inline) ─────────────────────────────────────────────
+
+const GOAL_METRICS = [
+  { value: 'weight_kg',          label: 'Weight',       unit: 'kg'    },
+  { value: 'body_fat_percent',   label: 'Body Fat',     unit: '%'     },
+  { value: 'muscle_mass',        label: 'Muscle Mass',  unit: 'kg'    },
+  { value: 'bmi',                label: 'BMI',          unit: 'kg/m²' },
+  { value: 'visceral_fat',       label: 'Visceral Fat', unit: ''      },
+  { value: 'body_water_percent', label: 'Body Water',   unit: '%'     },
+]
+
+const showGoalModal  = ref(false)
+const goalForm       = ref({ metric: '', target_value: '', deadline: '', notes: '' })
+const goalFormErrors = ref({})
+const savingGoal     = ref(false)
+
+const selectedGoalUnit = computed(() =>
+  GOAL_METRICS.find(m => m.value === goalForm.value.metric)?.unit ?? ''
+)
+
+const tomorrowDate = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
 })
 
-const latestMetrics = computed(() => {
-  if (!latestRecord.value) return []
-  const r = latestRecord.value
-  return [
-    { label: 'Weight',    value: r.weight_kg    ? unitStore.convertWeight(r.weight_kg).toFixed(1)   : '-', unit: unitStore.weightLabel },
-    { label: 'Body Fat',  value: r.body_fat_percent != null ? r.body_fat_percent.toFixed(1) : '-',         unit: '%' },
-    { label: 'Muscle',    value: r.muscle_mass  ? unitStore.convertWeight(r.muscle_mass).toFixed(1) : '-', unit: unitStore.weightLabel },
-    { label: 'BMI',       value: r.bmi             ? r.bmi.toFixed(1)                                     : '-', unit: 'kg/m²' },
-  ]
-})
+function openGoalModal() {
+  goalForm.value       = { metric: '', target_value: '', deadline: '', notes: '' }
+  goalFormErrors.value = {}
+  showGoalModal.value  = true
+}
+
+async function saveGoal() {
+  goalFormErrors.value = {}
+  const errors = {}
+  if (!goalForm.value.metric) errors.metric = 'Select a metric'
+  if (!goalForm.value.target_value || isNaN(Number(goalForm.value.target_value))) errors.target_value = 'Enter a valid target'
+  if (Object.keys(errors).length) { goalFormErrors.value = errors; return }
+
+  savingGoal.value = true
+  try {
+    const payload = {
+      metric:       goalForm.value.metric,
+      target_value: Number(goalForm.value.target_value),
+      deadline:     goalForm.value.deadline || null,
+      notes:        goalForm.value.notes    || null,
+    }
+    const res = await goalService.create(payload)
+    goalsData.value.unshift(res.data.data ?? res.data)
+    showGoalModal.value = false
+  } catch {
+    goalFormErrors.value.general = 'Failed to save goal. Please try again.'
+  } finally {
+    savingGoal.value = false
+  }
+}
+
+function goalHintText(goal) {
+  if (goal.progress !== null && goal.progress >= 100) return 'Already achieved!'
+  if (goal.current_value === null || goal.current_value === undefined) return 'Log a measurement to track progress'
+  const gap = Math.abs(Number(goal.current_value) - Number(goal.target_value)).toFixed(1)
+  return `${gap}${goal.metric_unit ? ' ' + goal.metric_unit : ''} to go`
+}
 
 const recentActivity = computed(() => {
   const items = []
@@ -290,6 +456,11 @@ const quickActions = [
     iconPath: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>',
   },
   {
+    label: 'My Goals',
+    path: '/goals',
+    iconPath: '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
+  },
+  {
     label: 'AI Tips',
     path: '/ai-tips',
     iconPath: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"></path>',
@@ -334,9 +505,10 @@ function formatRelativeTime(dateStr) {
 // ─── Data Loading ──────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  const [compRes, recRes] = await Promise.allSettled([
+  const [compRes, recRes, goalRes] = await Promise.allSettled([
     bodyCompositionService.getAll({ limit: 5, sort: 'desc' }),
     healthRecommendationService.getAll(),
+    goalService.getAll(),
   ])
 
   if (compRes.status === 'fulfilled') {
@@ -350,5 +522,11 @@ onMounted(async () => {
     tipsFromBackend.value = Array.isArray(data) ? data : (data.data ?? [])
   }
   loadingTips.value = false
+
+  if (goalRes.status === 'fulfilled') {
+    const data = goalRes.value.data
+    goalsData.value = Array.isArray(data) ? data : (data.data ?? [])
+  }
+  loadingGoals.value = false
 })
 </script>

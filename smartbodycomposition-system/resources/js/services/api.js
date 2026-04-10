@@ -81,6 +81,14 @@ export const healthRecommendationService = {
     api.put(`/recommendations/${id}/status`, { status }),
 };
 
+// ==================== GOALS ENDPOINTS ====================
+export const goalService = {
+  getAll: ()           => api.get('/goals'),
+  create: (data)       => api.post('/goals', data),
+  update: (id, data)   => api.put(`/goals/${id}`, data),
+  remove: (id)         => api.delete(`/goals/${id}`),
+};
+
 // ==================== ADMIN ENDPOINTS ====================
 export const adminService = {
   // Get dashboard stats
