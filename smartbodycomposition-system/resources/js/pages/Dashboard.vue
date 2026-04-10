@@ -251,31 +251,46 @@
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">BMI Status</span>
-                <span :class="[
-                  'inline-block px-3 py-1 rounded-full text-xs font-semibold text-white',
-                  bmiZone.badgeColor
-                ]">
-                  {{ bmiZone.label }}
-                </span>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm font-semibold" :class="bmiZone.textColor">
+                    {{ computedBMI.toFixed(1) }} kg/m²
+                  </span>
+                  <span :class="[
+                    'inline-block px-3 py-1 rounded-full text-xs font-semibold text-white',
+                    bmiZone.badgeColor
+                  ]">
+                    {{ bmiZone.label }}
+                  </span>
+                </div>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="relative w-full bg-gray-200 rounded-full h-2">
-                  <div :class="bmiZone.barColor + ' h-2 rounded-full transition-all duration-300'"
-                    :style="{ width: `${Math.min(((computedBMI || 0) / 30) * 100, 100)}%` }">
-                  </div>
-                  <!-- BMI Pointer Marker -->
+              <div class="relative">
+                <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden flex">
                   <div
-                    class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md transition-all"
-                    :style="{ left: `calc(${Math.min(((computedBMI || 0) / 30) * 100, 100)}% - 8px)` }"
+                    v-for="segment in bmiBarSegments"
+                    :key="segment.label"
+                    class="h-full"
+                    :class="segment.color"
+                    :style="{ width: segment.width }"
+                  ></div>
+                  <div
+                    class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 rounded-full shadow-md transition-all"
+                    :class="bmiZone.borderColor"
+                    :style="{ left: `calc(${bmiMarkerPosition}% - 8px)` }"
                     :title="`BMI: ${computedBMI.toFixed(1)}`"
                   ></div>
                 </div>
               </div>
               <div class="flex justify-between text-xs text-gray-600">
-                <span>Underweight</span>
-                <span class="font-bold text-green-700">Normal</span>
-                <span>Overweight</span>
-                <span class="font-bold text-red-700">Obese</span>
+                <span
+                  v-for="zone in bmiZones"
+                  :key="zone.label"
+                  :class="[
+                    'transition-colors',
+                    zone.label === bmiZone.label ? ['font-bold', zone.textColor] : 'text-gray-500'
+                  ]"
+                >
+                  {{ zone.shortLabel }}
+                </span>
               </div>
             </div>
 
@@ -283,31 +298,46 @@
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Body Fat Status</span>
-                <span :class="[
-                  'inline-block px-3 py-1 rounded-full text-xs font-semibold text-white',
-                  bodyFatZone.badgeColor
-                ]">
-                  {{ bodyFatZone.label }}
-                </span>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm font-semibold" :class="bodyFatZone.textColor">
+                    {{ (currentData.body_fat_percent || 0).toFixed(1) }}%
+                  </span>
+                  <span :class="[
+                    'inline-block px-3 py-1 rounded-full text-xs font-semibold text-white',
+                    bodyFatZone.badgeColor
+                  ]">
+                    {{ bodyFatZone.label }}
+                  </span>
+                </div>
               </div>
               <div class="relative">
                 <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden flex">
-                  <div class="h-full bg-blue-500" style="width: 20%"></div>
-                  <div class="h-full bg-green-500" style="width: 20%"></div>
-                  <div class="h-full bg-yellow-500" style="width: 25%"></div>
-                  <div class="h-full bg-orange-500" style="width: 35%"></div>
+                  <div
+                    v-for="segment in bodyFatBarSegments"
+                    :key="segment.label"
+                    class="h-full"
+                    :class="segment.color"
+                    :style="{ width: segment.width }"
+                  ></div>
                 </div>
                 <div
-                  class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-gray-800 rounded-full shadow-md transition-all"
-                  :style="{ left: `calc(${Math.min(((currentData.body_fat_percent || 0) / 30) * 100, 100)}% - 8px)` }"
+                  class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 rounded-full shadow-md transition-all"
+                  :class="bodyFatZone.borderColor"
+                  :style="{ left: `calc(${bodyFatMarkerPosition}% - 8px)` }"
                   :title="`${(currentData.body_fat_percent || 0).toFixed(1)}%`"
                 ></div>
               </div>
               <div class="flex justify-between text-xs text-gray-600">
-                <span>&lt;14%</span>
-                <span>14-18%</span>
-                <span>18-25%</span>
-                <span>&gt;25%</span>
+                <span
+                  v-for="zone in bodyFatZones"
+                  :key="zone.label"
+                  :class="[
+                    'transition-colors',
+                    zone.label === bodyFatZone.label ? ['font-bold', zone.textColor] : 'text-gray-500'
+                  ]"
+                >
+                  {{ zone.shortLabel }}
+                </span>
               </div>
             </div>
           </div>
@@ -566,22 +596,27 @@ const muscleMassChange = computed(() => {
   return parseFloat((curr - prev).toFixed(2))
 })
 
-const getBMIZone = (bmi) => {
-  if (bmi < 18.5) return { label: 'Underweight', badgeColor: 'bg-blue-600', barColor: 'bg-blue-500' }
-  if (bmi < 25) return { label: 'Normal Weight', badgeColor: 'bg-green-600', barColor: 'bg-green-500' }
-  if (bmi < 30) return { label: 'Overweight', badgeColor: 'bg-yellow-600', barColor: 'bg-yellow-500' }
-  return { label: 'Obese', badgeColor: 'bg-red-600', barColor: 'bg-red-500' }
+const bmiZones = [
+  { label: 'Underweight', shortLabel: 'Underweight', min: 0, max: 18.5, color: 'bg-blue-500', badgeColor: 'bg-blue-600', textColor: 'text-blue-700', borderColor: 'border-blue-600' },
+  { label: 'Normal Weight', shortLabel: 'Normal', min: 18.5, max: 25, color: 'bg-green-500', badgeColor: 'bg-green-600', textColor: 'text-green-700', borderColor: 'border-green-600' },
+  { label: 'Overweight', shortLabel: 'Overweight', min: 25, max: 30, color: 'bg-yellow-500', badgeColor: 'bg-yellow-600', textColor: 'text-yellow-700', borderColor: 'border-yellow-600' },
+  { label: 'Obese', shortLabel: 'Obese', min: 30, max: 40, color: 'bg-red-500', badgeColor: 'bg-red-600', textColor: 'text-red-700', borderColor: 'border-red-600' },
+]
+
+const bodyFatZones = [
+  { label: 'Essential', shortLabel: '<14%', min: 0, max: 14, color: 'bg-blue-500', badgeColor: 'bg-blue-600', textColor: 'text-blue-700', borderColor: 'border-blue-600' },
+  { label: 'Athletes', shortLabel: '14-18%', min: 14, max: 18, color: 'bg-green-500', badgeColor: 'bg-green-600', textColor: 'text-green-700', borderColor: 'border-green-600' },
+  { label: 'Fitness', shortLabel: '18-25%', min: 18, max: 25, color: 'bg-yellow-500', badgeColor: 'bg-yellow-600', textColor: 'text-yellow-700', borderColor: 'border-yellow-600' },
+  { label: 'Average', shortLabel: '>25%', min: 25, max: 40, color: 'bg-orange-500', badgeColor: 'bg-orange-600', textColor: 'text-orange-700', borderColor: 'border-orange-600' },
+]
+
+const getZone = (value, zones) => {
+  const matchedZone = zones.find(zone => value >= zone.min && value < zone.max)
+  return matchedZone || zones[zones.length - 1]
 }
 
-const getBodyFatZone = (bodyFat) => {
-  if (bodyFat < 14) return { label: 'Essential', badgeColor: 'bg-blue-600' }
-  if (bodyFat < 18) return { label: 'Athletes', badgeColor: 'bg-green-600' }
-  if (bodyFat < 25) return { label: 'Fitness', badgeColor: 'bg-green-600' }
-  return { label: 'Average', badgeColor: 'bg-yellow-600' }
-}
-
-const bmiZone = computed(() => getBMIZone(computedBMI.value || 0))
-const bodyFatZone = computed(() => getBodyFatZone(currentData.value.body_fat_percent || 0))
+const bmiZone = computed(() => getZone(computedBMI.value || 0, bmiZones))
+const bodyFatZone = computed(() => getZone(currentData.value.body_fat_percent || 0, bodyFatZones))
 
 const filteredRecords = computed(() => {
   if (!startDate.value || !endDate.value) return measurements.value
@@ -609,6 +644,30 @@ const buildMetricChart = (key) => {
 const weightChart = computed(() => buildMetricChart('weight_kg'))
 const muscleChart = computed(() => buildMetricChart('muscle_mass'))
 const bodyFatChart = computed(() => buildMetricChart('body_fat_percent'))
+
+const buildZoneSegments = (zones) => {
+  const max = zones[zones.length - 1].max
+
+  return zones.map((zone) => ({
+    label: zone.label,
+    color: zone.color,
+    width: `${((zone.max - zone.min) / max) * 100}%`,
+  }))
+}
+
+const getMarkerPosition = (value, max) => {
+  if (!value || value < 0) {
+    return 0
+  }
+
+  return Math.min((value / max) * 100, 100)
+}
+
+const bmiBarSegments = computed(() => buildZoneSegments(bmiZones))
+const bodyFatBarSegments = computed(() => buildZoneSegments(bodyFatZones))
+
+const bmiMarkerPosition = computed(() => getMarkerPosition(computedBMI.value, bmiZones[bmiZones.length - 1].max))
+const bodyFatMarkerPosition = computed(() => getMarkerPosition(currentData.value.body_fat_percent || 0, bodyFatZones[bodyFatZones.length - 1].max))
 
 // Methods
 const loadMeasurements = async () => {
