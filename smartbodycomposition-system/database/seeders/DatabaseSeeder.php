@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\BodyComposition;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,8 +16,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Generate 30 days of body composition data for user ID 3
-        $this->seedBodyCompositionsForUser(1, 30);
+        // Generate the full fixed 6-month body composition timeline for user ID 1.
+        $startDate = Carbon::create(2025, 10, 10);
+        $endDate = Carbon::create(2026, 4, 10);
+
+        $this->seedBodyCompositionsForUser(1, $startDate->diffInDays($endDate) + 1);
     }
 
     /**
