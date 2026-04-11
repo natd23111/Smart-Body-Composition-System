@@ -163,7 +163,7 @@
           </div>
         </div>
 
-        <!-- Calories and BMR -->
+        <!-- Calories and Body Age -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-900 mb-2">Calories (kcal)</label>
@@ -176,12 +176,12 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-900 mb-2">BMR (kcal/day)</label>
+            <label class="block text-sm font-medium text-gray-900 mb-2">Body Age</label>
             <input
-              v-model.number="form.bmr"
+              v-model.number="form.bodyAge"
               type="number"
               step="1"
-              placeholder="1600"
+              placeholder="35"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
             />
           </div>
@@ -249,7 +249,7 @@
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Water (%)</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Visceral Fat</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Calories (kcal)</th>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">BMR</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Body Age</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Physical Rating</th>
             </tr>
           </thead>
@@ -265,11 +265,19 @@
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_water_percent?.toFixed(1) || '-' }}%</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.visceral_fat?.toFixed(1) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.kcal || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.bmr ? measurement.bmr.toFixed(0) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_age || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ getRatingLabel(measurement.physical_rating) || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                <button @click="startEditMeasurement(measurement)" class="bg-transparent hover:bg-blue-500 text-gray-700 font-semibold hover:text-white py-2 px-4 border border-gray-500 hover:border-transparent rounded mr-2">Edit</button>
-                <button @click="confirmDeleteMeasurement(measurement)" class="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded">Delete</button>
+                <button @click="startEditMeasurement(measurement)" class="p-1.5 hover:bg-yellow-100 rounded transition-colors" title="Edit">
+                  <svg class="h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button @click="confirmDeleteMeasurement(measurement)" class="p-1.5 hover:bg-red-100 rounded transition-colors" title="Delete">
+                  <svg class="h-4 w-4 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path>
+                  </svg>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -339,8 +347,8 @@
               <input v-model.number="editForm.kcal" type="number" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-900 mb-2">BMR (kcal/day)</label>
-              <input v-model.number="editForm.bmr" type="number" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              <label class="block text-sm font-medium text-gray-900 mb-2">Body Age</label>
+              <input v-model.number="editForm.body_age" type="number" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
             </div>
           </div>
           <div class="flex justify-end gap-2 mt-4">
@@ -461,7 +469,7 @@ function startEditMeasurement(measurement) {
     muscle_mass: unitStore.convertWeight(measurement.muscle_mass),
     bone_mass: unitStore.convertWeight(measurement.bone_mass),
     kcal: measurement.kcal,
-    bmr: measurement.bmr,
+    body_age: measurement.body_age,
     visceral_fat: measurement.visceral_fat,
     physical_rating: measurement.physical_rating,
   }
@@ -507,7 +515,7 @@ const form = ref({
   physicalRating: null,
   boneMass: null,
   kcal: null,
-  bmr: null,
+  bodyAge: null,
   visceralFat: null,
 })
 
@@ -581,7 +589,7 @@ const recordMeasurement = async () => {
         physical_rating: form.value.physicalRating || null,
         bone_mass: unitStore.toKg(form.value.boneMass),
         kcal: form.value.kcal,
-        bmr: form.value.bmr,
+        body_age: form.value.bodyAge,
         visceral_fat: form.value.visceralFat,
       }),
     })
@@ -619,7 +627,7 @@ const resetForm = () => {
     physicalRating: null,
     boneMass: null,
     kcal: null,
-    bmr: null,
+    bodyAge: null,
     visceralFat: null,
   }
   errors.value = {}

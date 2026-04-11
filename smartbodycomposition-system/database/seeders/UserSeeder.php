@@ -61,7 +61,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 3,
                 'bone_mass'          => 3.1,
                 'kcal'               => 2520,
-                'bmr'                => 1920,
+                'body_age'           => 32,
                 'visceral_fat'       => 11,
             ],
             [
@@ -75,7 +75,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 3,
                 'bone_mass'          => 3.1,
                 'kcal'               => 2495,
-                'bmr'                => 1904,
+                'body_age'           => 32,
                 'visceral_fat'       => 11,
             ],
             [
@@ -89,7 +89,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 4,
                 'bone_mass'          => 3.1,
                 'kcal'               => 2473,
-                'bmr'                => 1886,
+                'body_age'           => 32,
                 'visceral_fat'       => 10,
             ],
             [
@@ -103,7 +103,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 4,
                 'bone_mass'          => 3.2,
                 'kcal'               => 2455,
-                'bmr'                => 1870,
+                'body_age'           => 32,
                 'visceral_fat'       => 10,
             ],
             [
@@ -117,7 +117,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 5,
                 'bone_mass'          => 3.2,
                 'kcal'               => 2437,
-                'bmr'                => 1855,
+                'body_age'           => 32,
                 'visceral_fat'       => 9,
             ],
             [
@@ -131,7 +131,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 5,
                 'bone_mass'          => 3.2,
                 'kcal'               => 2420,
-                'bmr'                => 1841,
+                'body_age'           => 32,
                 'visceral_fat'       => 9,
             ],
             [
@@ -145,7 +145,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 6,
                 'bone_mass'          => 3.2,
                 'kcal'               => 2403,
-                'bmr'                => 1826,
+                'body_age'           => 32,
                 'visceral_fat'       => 8,
             ],
             [
@@ -159,7 +159,7 @@ class UserSeeder extends Seeder
                 'physical_rating'    => 6,
                 'bone_mass'          => 3.2,
                 'kcal'               => 2387,
-                'bmr'                => 1812,
+                'body_age'           => 32,
                 'visceral_fat'       => 8,
             ],
         ];

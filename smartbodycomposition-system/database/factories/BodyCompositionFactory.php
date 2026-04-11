@@ -38,7 +38,7 @@ class BodyCompositionFactory extends Factory
         $physicalRating = min(7, max(2, (int) round(2 + (5 * $fatLossCurve))));
         $boneMass = round(3.1 + ($progress * 0.2), 1);
         $kcal = (int) round(2320 - (265 * $fatLossCurve) + ($wave * 9));
-        $bmr = (int) round(1845 - (175 * $fatLossCurve) + ($wave * 6));
+        $bodyAge = (int) round(42 - (7 * $fatLossCurve) + ($wave * 0.2));
         $visceralFat = round(16.4 - (8.5 * $fatLossCurve) + ($wave * 0.2), 1);
 
         $day++;
@@ -55,7 +55,7 @@ class BodyCompositionFactory extends Factory
             'physical_rating' => $physicalRating,
             'bone_mass' => $boneMass,
             'kcal' => $kcal,
-            'bmr' => $bmr,
+            'body_age' => $bodyAge,
             'visceral_fat' => $visceralFat,
         ];
     }
@@ -85,7 +85,7 @@ class BodyCompositionFactory extends Factory
                 'physical_rating' => 2,
                 'bone_mass' => 3.1,
                 'kcal' => 2320,
-                'bmr' => 1845,
+                'body_age' => 42,
                 'visceral_fat' => 16.4,
                 'measurement_date' => Carbon::create(2025, 10, 10),
             ],
@@ -98,7 +98,7 @@ class BodyCompositionFactory extends Factory
                 'physical_rating' => 3,
                 'bone_mass' => 3.2,
                 'kcal' => 2235,
-                'bmr' => 1790,
+                'body_age' => 40,
                 'visceral_fat' => 13.8,
                 'measurement_date' => Carbon::create(2025, 12, 10),
             ],
@@ -111,7 +111,7 @@ class BodyCompositionFactory extends Factory
                 'physical_rating' => 5,
                 'bone_mass' => 3.2,
                 'kcal' => 2145,
-                'bmr' => 1735,
+                'body_age' => 38,
                 'visceral_fat' => 11.1,
                 'measurement_date' => Carbon::create(2026, 2, 10),
             ],
@@ -124,7 +124,7 @@ class BodyCompositionFactory extends Factory
                 'physical_rating' => 7,
                 'bone_mass' => 3.3,
                 'kcal' => 2055,
-                'bmr' => 1670,
+                'body_age' => 35,
                 'visceral_fat' => 7.9,
                 'measurement_date' => Carbon::create(2026, 4, 10),
             ],

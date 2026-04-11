@@ -672,16 +672,19 @@ const handleExport = (format) => {
 }
 
 const exportAsCSV = (records) => {
-  const headers = ['Date', 'Weight (kg)', 'Body Fat (%)', 'Muscle Mass (kg)', 'Bone Mass (kg)', 'Water (%)', 'Visceral Fat', 'BMR', 'Physical Rating']
+  const headers = ['Date', 'Time', 'Weight (kg)', 'Body Fat (%)', 'Body Fat (kg)', 'Muscle (kg)', 'Bone Mass (kg)', 'Water (%)', 'Visceral Fat', 'Calories (kcal)', 'Body Age', 'Physical Rating']
   const rows = records.map(record => [
     record.measurement_date,
+    record.measurement_time || '-',
     record.weight_kg?.toFixed(1) || '-',
     record.body_fat_percent?.toFixed(1) || '-',
+    record.body_fat_kg?.toFixed(1) || '-',
     record.muscle_mass?.toFixed(1) || '-',
     record.bone_mass?.toFixed(1) || '-',
     record.body_water_percent?.toFixed(1) || '-',
     record.visceral_fat?.toFixed(1) || '-',
-    record.bmr || '-',
+    record.kcal || '-',
+    record.body_age || '-',
     record.physical_rating || '-'
   ])
 
@@ -727,13 +730,16 @@ const exportAsPDF = (records) => {
         <thead>
           <tr>
             <th>Date</th>
+            <th>Time</th>
             <th>Weight (kg)</th>
             <th>Body Fat (%)</th>
-            <th>Muscle Mass (kg)</th>
+            <th>Body Fat (kg)</th>
+            <th>Muscle (kg)</th>
             <th>Bone Mass (kg)</th>
             <th>Water (%)</th>
             <th>Visceral Fat</th>
-            <th>BMR</th>
+            <th>Calories (kcal)</th>
+            <th>Body Age</th>
             <th>Physical Rating</th>
           </tr>
         </thead>
@@ -741,20 +747,23 @@ const exportAsPDF = (records) => {
           ${records.map(record => `
             <tr>
               <td>${record.measurement_date}</td>
+              <td>${record.measurement_time || '-'}</td>
               <td>${record.weight_kg?.toFixed(1) || '-'}</td>
               <td>${record.body_fat_percent?.toFixed(1) || '-'}</td>
+              <td>${record.body_fat_kg?.toFixed(1) || '-'}</td>
               <td>${record.muscle_mass?.toFixed(1) || '-'}</td>
               <td>${record.bone_mass?.toFixed(1) || '-'}</td>
               <td>${record.body_water_percent?.toFixed(1) || '-'}</td>
               <td>${record.visceral_fat?.toFixed(1) || '-'}</td>
-              <td>${record.bmr || '-'}</td>
+              <td>${record.kcal || '-'}</td>
+              <td>${record.body_age || '-'}</td>
               <td>${record.physical_rating || '-'}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
       <div class="footer">
-        <p>This is a personal health record. Keep it private and secure.</p>
+        <p>This is your personal health record. Keep it private and secure.</p>
       </div>
     </body>
   </html>

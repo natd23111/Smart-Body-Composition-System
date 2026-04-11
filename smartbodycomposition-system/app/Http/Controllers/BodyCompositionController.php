@@ -28,7 +28,7 @@ class BodyCompositionController extends Controller
             'physical_rating' => 'nullable|numeric',
             'bone_mass' => 'nullable|numeric',
             'kcal' => 'nullable|numeric',
-            'bmr' => 'nullable|numeric',
+            'body_age' => 'nullable|numeric',
             'visceral_fat' => 'nullable|numeric',
         ]);
 

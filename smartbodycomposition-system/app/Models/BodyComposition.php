@@ -21,7 +21,7 @@ class BodyComposition extends Model
         'physical_rating',
         'bone_mass',
         'kcal',
-        'bmr',
+        'body_age',
         'visceral_fat'
     ];
 
