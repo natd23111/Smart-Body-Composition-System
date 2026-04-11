@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\HealthRecommendation;
+use App\Models\RecommendationTemplate;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -447,7 +448,28 @@ class RecommendationEngine
         $referenceRanges = $this->resolveReferenceRanges($profile);
         $measurementSnapshot = $this->formatMeasurementSnapshot($user, $latestMeasurement, $profile);
 
-        $cards = collect($this->buildTemplatesForMeasurement($latestMeasurement, $previousMeasurement, $measurementSnapshot, $profile, $referenceRanges))
+        // Load admin-managed templates from DB for content overrides and archived filtering
+        $dbTemplates = RecommendationTemplate::all()->keyBy('template_id');
+
+        $engineTemplates = collect($this->buildTemplatesForMeasurement($latestMeasurement, $previousMeasurement, $measurementSnapshot, $profile, $referenceRanges))
+            ->filter(function (array $tpl) use ($dbTemplates) {
+                $db = $dbTemplates->get($tpl['template_id']);
+                return !($db && $db->status === 'Archived');
+            })
+            ->map(function (array $tpl) use ($dbTemplates) {
+                $db = $dbTemplates->get($tpl['template_id']);
+                if ($db) {
+                    $tpl['title']    = $db->title;
+                    $tpl['summary']  = $db->summary;
+                    $tpl['details']  = $db->details;
+                    $tpl['priority'] = $db->priority;
+                }
+                return $tpl;
+            })
+            ->sortBy(fn (array $tpl) => $this->priorityRank($tpl['priority']))
+            ->values();
+
+        $cards = $engineTemplates
             ->map(function (array $template) use ($user, $storedByTemplate, $measurementSnapshot, $profile) {
                 $stored = $storedByTemplate->get($template['template_id']);
                 $existingRecord = $stored['record'] ?? null;

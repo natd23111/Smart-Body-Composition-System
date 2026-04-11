@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\BodyComposition;
+use App\Models\RecommendationTemplate;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
@@ -102,5 +104,59 @@ class AdminController extends Controller
             ]);
 
         return response()->json($records);
+    }
+
+    // ─── Recommendation Templates CRUD ───────────────────────────────────────
+
+    public function templates()
+    {
+        return response()->json(RecommendationTemplate::orderBy('id')->get());
+    }
+
+    public function storeTemplate(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id'   => 'required|string|unique:recommendation_templates,template_id',
+            'template_code' => 'required|string|unique:recommendation_templates,template_code',
+            'type'          => 'required|in:Hydration,Exercise,Nutrition,Recovery,Sleep',
+            'title'         => 'required|string|max:255',
+            'summary'       => 'required|string',
+            'details'       => 'required|array|min:1',
+            'details.*'     => 'required|string',
+            'priority'      => 'required|in:high,medium,low',
+            'status'        => 'required|in:Active,Archived',
+            'icon'          => 'nullable|string',
+        ]);
+
+        $template = RecommendationTemplate::create($validated);
+
+        return response()->json($template, 201);
+    }
+
+    public function updateTemplate(Request $request, $id)
+    {
+        $template = RecommendationTemplate::findOrFail($id);
+
+        $validated = $request->validate([
+            'type'     => 'sometimes|in:Hydration,Exercise,Nutrition,Recovery,Sleep',
+            'title'    => 'sometimes|string|max:255',
+            'summary'  => 'sometimes|string',
+            'details'  => 'sometimes|array|min:1',
+            'details.*'=> 'required|string',
+            'priority' => 'sometimes|in:high,medium,low',
+            'status'   => 'sometimes|in:Active,Archived',
+            'icon'     => 'nullable|string',
+        ]);
+
+        $template->update($validated);
+
+        return response()->json($template);
+    }
+
+    public function destroyTemplate($id)
+    {
+        RecommendationTemplate::findOrFail($id)->delete();
+
+        return response()->json(['message' => 'Template deleted']);
     }
 }
