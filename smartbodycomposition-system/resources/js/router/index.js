@@ -14,6 +14,12 @@ import AITips from '@/pages/AITips.vue'
 import Trends from '@/pages/Trends.vue'
 import Goals from '@/pages/Goals.vue'
 import Settings from '@/pages/Settings.vue'
+import AdminDashboard from '@/pages/AdminDashboard.vue'
+import AdminUsers from '@/pages/AdminUsers.vue'
+import AdminData from '@/pages/AdminData.vue'
+import AdminTemplates from '@/pages/AdminTemplates.vue'
+import AdminSettings from '@/pages/AdminSettings.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const routes = [
   {
@@ -104,6 +110,44 @@ const routes = [
         meta: { requiresAuth: true }
       }
     ]
+  },
+  // Admin routes - separate layout
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'admin-dashboard',
+        component: AdminDashboard,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: AdminUsers,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'data',
+        name: 'admin-data',
+        component: AdminData,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'templates',
+        name: 'admin-templates',
+        component: AdminTemplates,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'settings',
+        name: 'admin-settings',
+        component: AdminSettings,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      }
+    ]
   }
 ]
 
@@ -126,11 +170,14 @@ router.beforeEach((to, from, next) => {
   }
 
   const isAuthenticated = authStore.isAuthenticated
+  const isAdmin = authStore.user?.role === 'admin'
   const requiresAuth = to.meta.requiresAuth
+  const requiresAdmin = to.meta.requiresAdmin
 
   console.log('Router guard:', {
     path: to.path,
     isAuthenticated,
+    isAdmin,
     requiresAuth,
     user: authStore.user
   })
@@ -139,10 +186,15 @@ router.beforeEach((to, from, next) => {
   if (requiresAuth && !isAuthenticated) {
     console.log('Redirecting to login - not authenticated')
     next('/login')
-  } else if (to.path === '/login' && isAuthenticated) {
-    // Redirect to home page if already logged in
-    console.log('Already authenticated, redirecting to home page')
+  } else if (requiresAdmin && !isAdmin) {
+    // Regular user tried to access an admin-only route
+    console.log('Redirecting to home - not an admin')
     next('/home')
+  } else if (to.path === '/login' && isAuthenticated) {
+    // Already logged in — send admin to admin dashboard, users to home
+    const destination = isAdmin ? '/admin/dashboard' : '/home'
+    console.log('Already authenticated, redirecting to', destination)
+    next(destination)
   } else {
     next()
   }

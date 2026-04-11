@@ -4,22 +4,81 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\BodyComposition;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    // Dashboard summary
+    // Dashboard summary with chart data and recent activity
     public function dashboard()
     {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+
+        // Last 6 months labels, cumulative user growth, and monthly record counts
+        $months = [];
+        $userGrowth = [];
+        $monthlyRecords = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = $now->copy()->subMonths($i)->startOfMonth();
+            $monthEnd   = $now->copy()->subMonths($i)->endOfMonth();
+
+            $months[]         = $monthStart->format('M');
+            $userGrowth[]     = User::where('created_at', '<=', $monthEnd)->count();
+            $monthlyRecords[] = BodyComposition::whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        }
+
+        // Recent activity — 5 most recent registrations
+        $recentActivity = User::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get(['id', 'name', 'created_at'])
+            ->map(fn($u) => [
+                'id'     => $u->id,
+                'user'   => $u->name,
+                'action' => 'Account created',
+                'time'   => $u->created_at->diffForHumans(),
+            ]);
+
         return response()->json([
-            'total_users' => User::count(),
-            'total_records' => BodyComposition::count()
+            'total_users'        => User::count(),
+            'new_registrations'  => User::where('created_at', '>=', $startOfMonth)->count(),
+            'active_users'       => BodyComposition::where('created_at', '>=', $now->copy()->subDays(30))
+                                        ->distinct('user_id')
+                                        ->count('user_id'),
+            'total_records'      => BodyComposition::count(),
+            'records_this_month' => BodyComposition::where('created_at', '>=', $startOfMonth)->count(),
+            'months'             => $months,
+            'user_growth'        => $userGrowth,
+            'monthly_records'    => $monthlyRecords,
+            'recent_activity'    => $recentActivity,
         ]);
     }
 
-    // View all users
+    // View all users with activity info
     public function users()
     {
-        return response()->json(User::all());
+        $thirtyDaysAgo = Carbon::now()->subDays(30);
+
+        $users = User::withCount('bodyCompositions')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($user) use ($thirtyDaysAgo) {
+                $lastRecord = $user->bodyCompositions()->latest('created_at')->first();
+
+                return [
+                    'id'            => $user->id,
+                    'name'          => $user->name,
+                    'email'         => $user->email,
+                    'role'          => $user->role->value,
+                    'created_at'    => $user->created_at->format('Y-m-d'),
+                    'last_activity' => $lastRecord ? $lastRecord->created_at->diffForHumans() : 'No records',
+                    'record_count'  => $user->body_compositions_count,
+                    'status'        => ($lastRecord && $lastRecord->created_at->gte($thirtyDaysAgo))
+                                        ? 'Active' : 'Inactive',
+                ];
+            });
+
+        return response()->json($users);
     }
 
     // Delete user
@@ -27,14 +86,21 @@ class AdminController extends Controller
     {
         User::findOrFail($id)->delete();
 
-        return response()->json([
-            'message' => 'User deleted'
-        ]);
+        return response()->json(['message' => 'User deleted']);
     }
 
-    // View all records
+    // View all records (metadata only, no health values)
     public function records()
     {
-        return response()->json(BodyComposition::with('user')->get());
+        $records = BodyComposition::orderBy('created_at', 'desc')
+            ->get(['id', 'user_id', 'created_at'])
+            ->map(fn($r) => [
+                'id'        => $r->id,
+                'recordId'  => $r->created_at->format('Ymd') . '-' . str_pad($r->id, 3, '0', STR_PAD_LEFT),
+                'timestamp' => $r->created_at->format('Y-m-d H:i:s'),
+                'status'    => 'Submitted',
+            ]);
+
+        return response()->json($records);
     }
 }

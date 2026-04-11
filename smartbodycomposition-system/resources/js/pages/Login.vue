@@ -215,9 +215,10 @@ const handleLogin = async () => {
 
     success.value = 'Login successful! Redirecting...'
 
-    // Redirect to home page after 1 second
+    // Redirect based on role
+    const destination = authStore.user?.role === 'admin' ? '/admin/dashboard' : '/home'
     setTimeout(() => {
-      router.push('/home')
+      router.push(destination)
     }, 1000)
   } catch (err) {
     console.error('Login error:', err)
