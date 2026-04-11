@@ -13,27 +13,10 @@
       <p>Loading your trend data...</p>
     </div>
 
-    <!-- Not enough data -->
-    <div v-else-if="!meta.has_data" class="bg-white rounded-lg shadow border border-dashed border-gray-300 p-12 text-center">
-      <div class="text-5xl mb-4">📏</div>
-      <h3 class="text-xl font-semibold mb-2 text-gray-900">Not Enough Data Yet</h3>
-      <p class="text-gray-600">Record at least 2 body composition measurements to see trends and insights.</p>
-    </div>
-
-    <template v-else>
+    <template v-if="!loading">
       <div :class="{ 'opacity-50 pointer-events-none': transitioning }" class="transition-opacity duration-300 space-y-6">
-      <!-- Overall Summary Card -->
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-3">Your Health Summary</h3>
-        <p class="text-gray-800 text-base leading-relaxed">{{ meta.summary }}</p>
-        <div class="bg-white p-3 rounded border border-blue-200 mt-4">
-          <p class="text-sm text-gray-700">
-            <strong>💡 AI Insight:</strong> {{ meta.ai_insight }}
-          </p>
-        </div>
-      </div>
 
-      <!-- Controls -->
+      <!-- Controls (always visible) -->
       <div class="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col md:flex-row gap-4 items-start md:items-end">
         <div>
           <label class="text-sm font-semibold text-gray-700 mb-2 block">Time Period</label>
@@ -63,8 +46,26 @@
         </div>
       </div>
 
+      <!-- Not enough data for this period -->
+      <div v-if="!meta.has_data" class="bg-white rounded-lg shadow border border-dashed border-gray-300 p-12 text-center">
+        <div class="text-5xl mb-4">📏</div>
+        <h3 class="text-xl font-semibold mb-2 text-gray-900">Not Enough Data Yet</h3>
+        <p class="text-gray-600">Record at least 2 body composition measurements to see trends and insights.</p>
+      </div>
+
+      <!-- Overall Summary Card -->
+      <div v-if="meta.has_data" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-3">Your Health Summary</h3>
+        <p class="text-gray-800 text-base leading-relaxed">{{ meta.summary }}</p>
+        <div class="bg-white p-3 rounded border border-blue-200 mt-4">
+          <p class="text-sm text-gray-700">
+            <strong>💡 AI Insight:</strong> {{ meta.ai_insight }}
+          </p>
+        </div>
+      </div>
+
       <!-- No insights for period -->
-      <div v-if="filteredInsights.length === 0" class="bg-white rounded-lg shadow border border-gray-200 p-10 text-center">
+      <div v-if="meta.has_data && filteredInsights.length === 0" class="bg-white rounded-lg shadow border border-gray-200 p-10 text-center">
         <div class="text-4xl mb-3">🔭</div>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">No data for this period</h3>
         <p class="text-gray-600">Not enough measurements in the selected time range. Try a longer period.</p>
@@ -240,7 +241,7 @@ const transitioning = ref(false)
 const error       = ref('')
 const insights    = ref([])
 const meta        = ref({ has_data: false, measurement_count: 0, summary: '', ai_insight: '' })
-const selectedPeriod = ref(7)
+const selectedPeriod = ref(30)
 const selectedMetric = ref('all')
 const expandedId  = ref(null)
 

@@ -102,9 +102,9 @@
                     :key="i"
                     class="pb-2 border-b border-gray-100 last:border-0 last:pb-0"
                   >
-                    <div class="flex items-center justify-between mb-0.5">
-                      <span class="font-medium text-gray-900 text-sm">{{ basis.label }}</span>
-                      <span class="font-semibold text-gray-800 text-sm">{{ basis.value }}</span>
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                      <span class="font-medium text-gray-600 text-sm">Your current {{ basis.label }}:</span>
+                      <span class="font-semibold text-gray-900 text-sm">{{ basis.value }}</span>
                     </div>
                     <p class="text-xs text-gray-600">{{ basis.insight }}</p>
                   </div>
