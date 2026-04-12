@@ -59,7 +59,7 @@
         <p class="text-gray-800 text-base leading-relaxed">{{ meta.summary }}</p>
         <div class="bg-white p-3 rounded border border-blue-200 mt-4">
           <p class="text-sm text-gray-700">
-            <strong>💡 AI Insight:</strong> {{ meta.ai_insight }}
+            <strong>💡 Note:</strong> {{ meta.ai_insight }}
           </p>
         </div>
       </div>
@@ -150,16 +150,16 @@
               </p>
             </div>
 
-            <!-- AI Insight -->
+            <!-- Coach Note -->
             <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-              <p class="font-semibold text-gray-900 mb-2">🤖 AI Insight Summary</p>
+              <p class="font-semibold text-gray-900 mb-2">🧭 Coach Note Summary</p>
               <p class="text-gray-800 mb-3 text-sm leading-relaxed">{{ insight.conclusion }}</p>
               <button
                 @click="toggleExpanded(insight.key)"
                 class="flex items-center gap-1.5 px-3 py-1.5 border border-indigo-300 text-sm text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
               >
                 <span>{{ expandedId === insight.key ? '▲' : '▼' }}</span>
-                {{ expandedId === insight.key ? 'Hide AI Logic' : 'Show How AI Analysed This' }}
+                {{ expandedId === insight.key ? 'Hide Analysis Details' : 'Show How This Was Analysed' }}
               </button>
 
               <div v-if="expandedId === insight.key" class="mt-4 pt-4 border-t border-indigo-200 space-y-3">
@@ -341,6 +341,12 @@ function trendArrow(direction) {
 
 function changeArrowClass(insight) {
   if (insight.direction === 'stable') return 'text-gray-500'
+  if (insight.key === 'weight_kg') {
+    const signal = insight.weight_health_signal
+    if (signal === 'healthy_gain' || signal === 'healthy_loss') return 'text-green-600'
+    if (signal === 'mixed_gain' || signal === 'mixed_loss') return 'text-yellow-600'
+    if (signal === 'unhealthy_gain' || signal === 'unhealthy_loss') return 'text-red-600'
+  }
   const badUp = ['body_fat_percent', 'weight_kg', 'visceral_fat']
   const isBad = badUp.includes(insight.key) ? insight.direction === 'up' : insight.direction === 'down'
   return isBad ? 'text-red-600' : 'text-green-600'
@@ -348,7 +354,13 @@ function changeArrowClass(insight) {
 
 function changeCardClass(insight) {
   if (insight.direction === 'stable') return 'bg-gray-50'
-  // for body fat, weight, visceral fat â€” up is bad; for muscle, water â€” down is bad
+  if (insight.key === 'weight_kg') {
+    const signal = insight.weight_health_signal
+    if (signal === 'healthy_gain' || signal === 'healthy_loss') return 'bg-green-50'
+    if (signal === 'mixed_gain' || signal === 'mixed_loss') return 'bg-yellow-50'
+    if (signal === 'unhealthy_gain' || signal === 'unhealthy_loss') return 'bg-red-50'
+  }
+  // for body fat, weight, visceral fat up is bad; for muscle, water down is bad
   const badUp = ['body_fat_percent', 'weight_kg', 'visceral_fat']
   const isBad = badUp.includes(insight.key) ? insight.direction === 'up' : insight.direction === 'down'
   return isBad ? 'bg-red-50' : 'bg-green-50'

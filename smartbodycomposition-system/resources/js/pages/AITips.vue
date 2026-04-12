@@ -33,11 +33,6 @@
         </div>
       </div>
 
-      <!-- Toolbar -->
-      <div class="flex items-center justify-end">
-        <p class="text-sm text-gray-500">Last synced: {{ formatDate(meta.synced_at) }}</p>
-      </div>
-
       <!-- Recommendation Cards -->
       <div class="space-y-4">
         <div
@@ -76,13 +71,6 @@
               >
                 <span>{{ expandedId === rec.id ? '▲' : '▼' }}</span>
                 {{ expandedId === rec.id ? 'Hide Explanation' : 'Why am I seeing this?' }}
-              </button>
-              <button
-                @click="markDone(rec)"
-                :disabled="updatingId === rec.id"
-                class="ml-auto px-3 py-1.5 border border-red-300 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-              >
-                {{ updatingId === rec.id ? 'Dismissing...' : '✕ Dismiss' }}
               </button>
             </div>
 
@@ -124,14 +112,6 @@
                 </div>
               </div>
 
-              <!-- Confidence badge -->
-              <div class="flex items-center gap-2 text-sm">
-                <span class="text-gray-600 font-medium">Confidence:</span>
-                <span :class="confidenceClass(rec.confidence)" class="px-2 py-0.5 rounded-full text-xs font-semibold">
-                  {{ capitalize(rec.confidence) }}
-                </span>
-              </div>
-
               <!-- Disclaimer -->
               <p class="text-xs text-gray-500 italic border-t pt-3">
                 💡 {{ rec.disclaimer }}
@@ -141,11 +121,11 @@
         </div>
       </div>
 
-      <!-- Empty State (all dismissed) -->
+      <!-- Empty State -->
       <div v-if="activeRecommendations.length === 0" class="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
         <div class="text-4xl mb-4">✨</div>
-        <h3 class="text-xl font-semibold mb-2 text-gray-900">No Active Recommendations</h3>
-        <p class="text-gray-600">All tips have been dismissed. Reload the page to fetch fresh recommendations.</p>
+        <h3 class="text-xl font-semibold mb-2 text-gray-900">No Recommendations Available</h3>
+        <p class="text-gray-600">Check back after your next measurement to get fresh recommendations.</p>
       </div>
     </template>
 
@@ -159,19 +139,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getRecommendations, updateRecommendationStatus } from '@/services/authService'
+import { getRecommendations } from '@/services/authService'
 
 const loading = ref(true)
 const error = ref('')
 const recommendations = ref([])
 const meta = ref({ has_measurement: false })
 const expandedId = ref(null)
-const dismissedIds = ref(new Set())
-const updatingId = ref(null)
 
-const activeRecommendations = computed(() =>
-  recommendations.value.filter(r => !dismissedIds.value.has(r.id))
-)
+const activeRecommendations = computed(() => recommendations.value)
 
 const loadRecommendations = async () => {
   error.value = ''
@@ -183,19 +159,6 @@ const loadRecommendations = async () => {
     error.value = e.message || 'Failed to load recommendations.'
   } finally {
     loading.value = false
-  }
-}
-
-const markDone = async (rec) => {
-  updatingId.value = rec.id
-  try {
-    await updateRecommendationStatus(rec.id, 'completed')
-    dismissedIds.value = new Set([...dismissedIds.value, rec.id])
-    if (expandedId.value === rec.id) expandedId.value = null
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    updatingId.value = null
   }
 }
 

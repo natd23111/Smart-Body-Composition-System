@@ -66,6 +66,11 @@ return [
     ],
     'weight_trend' => [
         'gain_threshold_kg' => 2.0,
+        'loss_threshold_kg' => 2.0,
+        'muscle_gain_min_kg_for_healthy_bulk' => 0.4,
+        'max_body_fat_gain_percent_for_healthy_bulk' => 1.0,
+        'max_muscle_loss_kg_for_healthy_cut' => 0.3,
+        'min_body_fat_loss_percent_for_healthy_cut' => 0.5,
     ],
     'physical_rating' => [
         'low_max' => 3,

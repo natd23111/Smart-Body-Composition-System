@@ -320,22 +320,106 @@ class RecommendationEngine
         $after     = (float) $last->weight_kg;
         $absChange = round($after - $before, 2);
         $direction = $this->trendDirection($absChange);
-        $gainThreshold = config('recommendations.weight_trend.gain_threshold_kg', 2.0);
+        $gainThreshold = (float) config('recommendations.weight_trend.gain_threshold_kg', 2.0);
+        $lossThreshold = (float) config('recommendations.weight_trend.loss_threshold_kg', 2.0);
 
-        $severity = match (true) {
-            $absChange > ($gainThreshold * 2) => 'high',
-            $absChange > $gainThreshold       => 'moderate',
-            default                           => 'low',
+        $muscleGainMinForBulk = (float) config('recommendations.weight_trend.muscle_gain_min_kg_for_healthy_bulk', 0.4);
+        $maxBodyFatGainForBulk = (float) config('recommendations.weight_trend.max_body_fat_gain_percent_for_healthy_bulk', 1.0);
+        $maxMuscleLossForCut = (float) config('recommendations.weight_trend.max_muscle_loss_kg_for_healthy_cut', 0.3);
+        $minBodyFatLossForCut = (float) config('recommendations.weight_trend.min_body_fat_loss_percent_for_healthy_cut', 0.5);
+
+        $muscleDelta = ($first->muscle_mass !== null && $last->muscle_mass !== null)
+            ? round((float) $last->muscle_mass - (float) $first->muscle_mass, 1)
+            : null;
+        $bodyFatDelta = ($first->body_fat_percent !== null && $last->body_fat_percent !== null)
+            ? round((float) $last->body_fat_percent - (float) $first->body_fat_percent, 1)
+            : null;
+
+        $weightHealthSignal = 'neutral';
+
+        if ($direction === 'up') {
+            $isHealthyBulk = $muscleDelta !== null && $bodyFatDelta !== null
+                && $muscleDelta >= $muscleGainMinForBulk
+                && $bodyFatDelta <= $maxBodyFatGainForBulk;
+
+            $isUnhealthyGain = ($bodyFatDelta !== null && $bodyFatDelta > $maxBodyFatGainForBulk)
+                || ($muscleDelta !== null && $muscleDelta <= 0);
+
+            $weightHealthSignal = $isHealthyBulk
+                ? 'healthy_gain'
+                : ($isUnhealthyGain ? 'unhealthy_gain' : 'mixed_gain');
+        } elseif ($direction === 'down') {
+            $isHealthyCut = $muscleDelta !== null && $bodyFatDelta !== null
+                && $muscleDelta >= -$maxMuscleLossForCut
+                && $bodyFatDelta <= -$minBodyFatLossForCut;
+
+            $isUnhealthyLoss = $muscleDelta !== null && $muscleDelta < -$maxMuscleLossForCut;
+
+            $weightHealthSignal = $isHealthyCut
+                ? 'healthy_loss'
+                : ($isUnhealthyLoss ? 'unhealthy_loss' : 'mixed_loss');
+        }
+
+        $severity = match ($weightHealthSignal) {
+            'healthy_gain', 'healthy_loss', 'neutral' => 'low',
+            'mixed_gain', 'mixed_loss' => 'moderate',
+            'unhealthy_gain' => $absChange > ($gainThreshold * 2) ? 'high' : 'moderate',
+            'unhealthy_loss' => abs($absChange) > ($lossThreshold * 2) ? 'high' : 'moderate',
+            default => 'low',
         };
 
         $normalMin = $heightM ? round(18.5 * $heightM * $heightM, 1) : null;
         $normalMax = $heightM ? round(25.0 * $heightM * $heightM, 1) : null;
 
-        $conclusion = match ($direction) {
-            'up'    => "Your weight has increased by {$absChange} kg over this period. This could indicate a caloric surplus, water retention, or changes in exercise routine. " . ($absChange > $gainThreshold ? 'Review portion sizes and total daily calorie intake.' : 'Monitor this trend over the next period before making changes.'),
-            'down'  => "Your weight has decreased by " . abs($absChange) . " kg over this period. If the pace is gradual, this is generally positive. Ensure adequate protein intake to preserve lean muscle mass.",
-            default => 'Your weight has remained stable over this period, suggesting your current habits are consistent.',
+        $changeMagnitude = abs($absChange);
+
+        $conclusion = match ($weightHealthSignal) {
+            'healthy_gain' => "Your weight increased by {$changeMagnitude} kg with signs of productive gain (muscle up and body fat controlled). This pattern is generally consistent with a healthy bulking phase.",
+            'unhealthy_gain' => "Your weight increased by {$changeMagnitude} kg, but composition trends suggest excess fat gain and/or limited muscle gain. Consider tightening calorie quality and improving training progression.",
+            'mixed_gain' => "Your weight increased by {$changeMagnitude} kg with mixed composition signals. Keep monitoring muscle and body fat changes before increasing calories further.",
+            'healthy_loss' => "Your weight decreased by {$changeMagnitude} kg while body fat trended down and muscle was largely preserved. This is a healthier fat-loss pattern.",
+            'unhealthy_loss' => "Your weight decreased by {$changeMagnitude} kg, but muscle loss appears higher than expected. Slow the deficit and prioritise resistance training and protein intake.",
+            'mixed_loss' => "Your weight decreased by {$changeMagnitude} kg with mixed composition signals. Aim for a slower cut and track muscle retention closely.",
+            default => 'Your weight has remained relatively stable over this period, suggesting your current habits are consistent.',
         };
+
+        $recommendations = match ($weightHealthSignal) {
+            'healthy_gain' => [
+                ['icon' => '🏋️', 'title' => 'Continue Progressive Overload', 'description' => 'Keep adding small strength progressions to direct weight gain toward muscle'],
+                ['icon' => '🥗', 'title' => 'Keep Surplus Controlled', 'description' => 'Use a moderate calorie surplus and review body fat trend weekly'],
+            ],
+            'unhealthy_gain' => [
+                ['icon' => '🥗', 'title' => 'Tighten Calorie Quality', 'description' => 'Reduce ultra-processed calorie sources and improve meal structure'],
+                ['icon' => '🏃', 'title' => 'Add Conditioning Volume', 'description' => 'Introduce 2-3 cardio sessions weekly while keeping strength work in place'],
+            ],
+            'mixed_gain' => [
+                ['icon' => '📈', 'title' => 'Track Composition Weekly', 'description' => 'Check both body fat and muscle trend before raising calories further'],
+                ['icon' => '🥩', 'title' => 'Prioritise Protein Consistency', 'description' => 'Spread protein intake evenly across meals to support lean gains'],
+            ],
+            'healthy_loss' => [
+                ['icon' => '💪', 'title' => 'Preserve Current Strength Plan', 'description' => 'Keep resistance training frequency stable to maintain lean tissue'],
+                ['icon' => '🥩', 'title' => 'Maintain Protein Intake', 'description' => 'Aim for adequate daily protein while continuing gradual fat loss'],
+            ],
+            'unhealthy_loss' => [
+                ['icon' => '🥩', 'title' => 'Increase Protein and Recovery', 'description' => 'Higher protein and better recovery can reduce further muscle loss'],
+                ['icon' => '⚖️', 'title' => 'Reduce Deficit Aggressiveness', 'description' => 'Use a smaller calorie deficit to improve muscle retention'],
+            ],
+            'mixed_loss' => [
+                ['icon' => '📉', 'title' => 'Slow the Cutting Pace', 'description' => 'A slower weekly loss target often improves body-composition outcomes'],
+                ['icon' => '🏋️', 'title' => 'Keep Strength Training Priority', 'description' => 'Maintain progressive resistance work during fat-loss phases'],
+            ],
+            default => [
+                ['icon' => '🥩', 'title' => 'Maintain Protein Intake', 'description' => 'Adequate protein preserves lean mass during weight changes'],
+                ['icon' => '💧', 'title' => 'Stay Hydrated', 'description' => 'Hydration supports healthy metabolism and body composition'],
+            ],
+        };
+
+        $muscleDeltaLine = $muscleDelta === null
+            ? 'Muscle mass change unavailable (missing measurements)'
+            : "Muscle mass change: {$muscleDelta} kg";
+        $bodyFatDeltaLine = $bodyFatDelta === null
+            ? 'Body fat change unavailable (missing measurements)'
+            : "Body fat change: {$bodyFatDelta}%";
 
         return [
             'key'          => 'weight_kg',
@@ -347,25 +431,26 @@ class RecommendationEngine
             'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
             'direction'    => $direction,
             'severity'     => $severity,
+            'weight_health_signal' => $weightHealthSignal,
+            'composition_context' => [
+                'muscle_change_kg' => $muscleDelta,
+                'body_fat_change_percent' => $bodyFatDelta,
+            ],
             'normal_range' => [
                 'min'     => $normalMin,
                 'max'     => $normalMax,
                 'context' => $heightM ? 'Based on BMI 18.5–25 range for your height' : 'Set height in your profile for personalised range',
             ],
             'observation'  => $this->buildTrendObservation('Weight', $before, $after, $absChange, ' kg'),
-            'rule_applied' => "IF weight gain > {$gainThreshold} kg in period → moderate severity\n"
-                            . "IF weight gain > " . ($gainThreshold * 2) . " kg in period → high severity\n"
-                            . "Threshold from config/recommendations.php → weight_trend.gain_threshold_kg",
+            'rule_applied' => "Weight trend uses both scale change and composition context\n"
+                            . "{$muscleDeltaLine}\n"
+                            . "{$bodyFatDeltaLine}\n"
+                            . "Healthy gain hint: muscle +{$muscleGainMinForBulk} kg and body fat <= +{$maxBodyFatGainForBulk}%\n"
+                            . "Healthy loss hint: body fat <= -{$minBodyFatLossForCut}% and muscle loss >= -{$maxMuscleLossForCut} kg\n"
+                            . "Large gain threshold: +{$gainThreshold} kg; large loss threshold: -{$lossThreshold} kg\n"
+                            . "Thresholds from config/recommendations.php → weight_trend",
             'conclusion'      => $conclusion,
-            'recommendations' => $direction === 'up'
-                ? [
-                    ['icon' => '🥗', 'title' => 'Review Calorie Intake', 'description' => 'Your weight increase suggests a dietary adjustment may help'],
-                    ['icon' => '🏃', 'title' => 'Increase Exercise Frequency', 'description' => 'Add cardio sessions to support weight management'],
-                  ]
-                : [
-                    ['icon' => '🥩', 'title' => 'Maintain Protein Intake', 'description' => 'Adequate protein preserves lean mass during weight changes'],
-                    ['icon' => '💧', 'title' => 'Stay Hydrated', 'description' => 'Hydration supports healthy metabolism and body composition'],
-                  ],
+            'recommendations' => $recommendations,
             'data_points' => $measurements
                 ->filter(fn ($m) => $m->weight_kg !== null)
                 ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->weight_kg])
@@ -409,9 +494,37 @@ class RecommendationEngine
         $high     = collect($insights)->firstWhere('severity', 'high');
         $moderate = collect($insights)->firstWhere('severity', 'moderate');
 
-        if ($high) return "Focus on addressing {$high['label']} first, as it shows the most significant change relative to your personalised thresholds. Consistent adjustments to both exercise frequency and dietary habits over the next 2–4 weeks will be key.";
-        if ($moderate) return "Your metrics are generally manageable. Keep an eye on {$moderate['label']} and make gradual adjustments rather than drastic changes.";
-        return 'Your metrics are trending positively based on your personalised wellness thresholds. Maintain your current routine and continue logging measurements regularly.';
+        if ($high) {
+            return $this->pickInsightMessage([
+                "Your top priority right now is {$high['label']}. It changed the most against your personalised thresholds, so focus on steady exercise and nutrition adjustments over the next 2-4 weeks.",
+                "{$high['label']} is the main area to act on first. A calm, consistent plan for training, meals, and sleep over the next 2-4 weeks should help bring this trend back toward your target range.",
+                "The biggest signal in this period is {$high['label']}. Start with one or two practical changes this week, then keep them consistent for 2-4 weeks before reassessing.",
+            ], $high['key'] ?? $high['label']);
+        }
+
+        if ($moderate) {
+            return $this->pickInsightMessage([
+                "Your trends are generally manageable. Keep a closer watch on {$moderate['label']} and use small, consistent habit changes rather than aggressive resets.",
+                "No major red flags, but {$moderate['label']} is worth monitoring. Gentle adjustments to routine and nutrition should be enough at this stage.",
+                "You're in a workable range overall. Keep tracking {$moderate['label']} and make gradual improvements week by week.",
+            ], $moderate['key'] ?? $moderate['label']);
+        }
+
+        return $this->pickInsightMessage([
+            'Your trends look positive overall. Keep your current routine steady and continue logging measurements so progress stays visible.',
+            'Most markers are moving in a healthy direction. Stay consistent with the habits that are already working for you.',
+            'Current patterns are stable and encouraging. Keep doing the basics well and review again after a few more check-ins.',
+        ], 'stable');
+    }
+
+    private function pickInsightMessage(array $messages, string $seed): string
+    {
+        if ($messages === []) {
+            return '';
+        }
+
+        $index = abs(crc32($seed)) % count($messages);
+        return $messages[$index];
     }
 
     // ─── Existing syncForUser continues below ────────────────────────────────
