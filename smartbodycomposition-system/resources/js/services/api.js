@@ -120,6 +120,9 @@ export const adminService = {
 
   updateSettings: (data) =>
     api.put('/admin/settings', data),
+
+  sendTestEmail: (email) =>
+    api.post('/admin/settings/test-email', email ? { email } : {}),
 };
 
 export default api;

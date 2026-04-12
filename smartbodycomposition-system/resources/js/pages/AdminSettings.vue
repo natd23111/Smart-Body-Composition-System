@@ -15,6 +15,22 @@
       Settings saved successfully.
     </div>
 
+    <div v-if="error" class="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+      <svg class="h-5 w-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      {{ error }}
+    </div>
+
+    <div v-if="testEmailMessage" class="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+      <svg class="h-5 w-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+      </svg>
+      {{ testEmailMessage }}
+    </div>
+
 
     <!-- Email Configuration -->
     <section class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
@@ -52,6 +68,20 @@
             <option value="none">None</option>
           </select>
         </div>
+      </div>
+      <div class="border-t border-gray-100 pt-4 flex flex-col md:flex-row md:items-end gap-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Test Recipient</label>
+          <input v-model="testEmailRecipient" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Leave blank to send to your admin email" />
+          <p class="text-xs text-gray-500 mt-1">Use this after saving SMTP settings to confirm delivery.</p>
+        </div>
+        <button
+          @click="sendTestEmail"
+          :disabled="sendingTestEmail"
+          class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+        >
+          {{ sendingTestEmail ? 'Sending...' : 'Send Test Email' }}
+        </button>
       </div>
     </section>
 
@@ -96,6 +126,9 @@ import { adminService } from '@/services/api'
 const saved = ref(false)
 const loading = ref(true)
 const error = ref('')
+const testEmailMessage = ref('')
+const testEmailRecipient = ref('')
+const sendingTestEmail = ref(false)
 
 const defaults = {
   weightUnit: 'kg',
@@ -144,6 +177,7 @@ function resetSettings() {
   form.value = JSON.parse(JSON.stringify(defaults))
   saved.value = false
   error.value = ''
+  testEmailMessage.value = ''
 }
 
 async function loadSettings() {
@@ -168,6 +202,7 @@ async function loadSettings() {
 
 async function persistSettings() {
   error.value = ''
+  testEmailMessage.value = ''
 
   try {
     const response = await adminService.updateSettings(form.value)
@@ -182,6 +217,21 @@ async function persistSettings() {
     setTimeout(() => { saved.value = false }, 3000)
   } catch (requestError) {
     error.value = requestError.response?.data?.message || requestError.message || 'Failed to save settings.'
+  }
+}
+
+async function sendTestEmail() {
+  error.value = ''
+  testEmailMessage.value = ''
+  sendingTestEmail.value = true
+
+  try {
+    const response = await adminService.sendTestEmail(testEmailRecipient.value.trim() || null)
+    testEmailMessage.value = response.data.message || 'Test email sent successfully.'
+  } catch (requestError) {
+    error.value = requestError.response?.data?.error || requestError.response?.data?.message || requestError.message || 'Failed to send test email.'
+  } finally {
+    sendingTestEmail.value = false
   }
 }
 

@@ -9,6 +9,7 @@ use App\Models\RecommendationTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
@@ -210,7 +211,11 @@ class AdminController extends Controller
                 'password' => '',
                 'from' => config('mail.from.address'),
                 'from_name' => config('mail.from.name', config('app.name')),
-                'encryption' => config('mail.mailers.smtp.scheme', 'tls') ?? 'none',
+                'encryption' => match (config('mail.mailers.smtp.scheme')) {
+                    'smtps' => 'ssl',
+                    null => 'none',
+                    default => 'tls',
+                },
             ],
             'sessionTimeout' => 120,
             'maxLoginAttempts' => 5,
@@ -277,6 +282,44 @@ class AdminController extends Controller
         return response()->json([
             'message' => 'Settings saved successfully.',
             'data' => $this->settings()->getData(true),
+        ]);
+    }
+
+    public function sendTestEmail(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'nullable|email',
+        ]);
+
+        $recipient = $validated['email'] ?? $request->user()->email;
+
+        try {
+            Mail::to($recipient)->send(new class($request->user()->name ?? 'Admin') extends \Illuminate\Mail\Mailable {
+                public function __construct(private readonly string $adminName)
+                {
+                }
+
+                public function build(): self
+                {
+                    return $this
+                        ->subject('SMTP test email from Smart Body Composition')
+                        ->html(
+                            '<h2>SMTP configuration is working</h2>'
+                            . '<p>Hello ' . e($this->adminName) . ',</p>'
+                            . '<p>This is a test email sent from the Admin Settings SMTP configuration.</p>'
+                            . '<p>If you received this, the saved mail settings are being applied successfully.</p>'
+                        );
+                }
+            });
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'message' => 'Failed to send test email.',
+                'error' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Test email sent successfully to ' . $recipient . '.',
         ]);
     }
 

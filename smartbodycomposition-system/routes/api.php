@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\PasswordResetMail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BodyCompositionController;
 use App\Http\Controllers\HealthRecommendationController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\GoalController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 // Public Auth Routes
 Route::post('/register', function (Request $request) {
@@ -95,17 +97,19 @@ Route::post('/forgot-password', function (Request $request) {
 
     $resetUrl = config('app.url') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
 
-    \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $resetUrl) {
-        $message->to($user->email, $user->name)
-            ->subject('Reset Your Password — Smart Body Composition')
-            ->html(
-                '<p>Hi ' . htmlspecialchars($user->name) . ',</p>' .
-                '<p>You requested a password reset. Click the link below to set a new password. ' .
-                'This link expires in 60 minutes.</p>' .
-                '<p><a href="' . $resetUrl . '" style="background:#16a34a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Reset Password</a></p>' .
-                '<p>If you did not request this, you can ignore this email.</p>'
-            );
-    });
+    try {
+        \Illuminate\Support\Facades\Mail::to($user->email, $user->name)
+            ->send(new PasswordResetMail($user, $resetUrl));
+    } catch (\Throwable $exception) {
+        Log::error('Failed to send password reset email.', [
+            'email' => $request->email,
+            'message' => $exception->getMessage(),
+        ]);
+
+        return response()->json([
+            'error' => 'Unable to send the reset email right now. Please try again shortly.',
+        ], 500);
+    }
 
     return response()->json(['message' => 'If that email exists, a reset link has been sent.']);
 });
@@ -288,6 +292,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('admin/records', [AdminController::class, 'records']);
     Route::get('admin/settings', [AdminController::class, 'settings']);
     Route::put('admin/settings', [AdminController::class, 'updateSettings']);
+    Route::post('admin/settings/test-email', [AdminController::class, 'sendTestEmail']);
 
     // Recommendation Templates CRUD
     Route::get('admin/templates', [AdminController::class, 'templates']);

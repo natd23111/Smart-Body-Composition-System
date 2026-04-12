@@ -40,7 +40,7 @@
               </svg>
               <div>
                 <p class="text-green-800 text-sm font-medium">Check your inbox</p>
-                <p class="text-green-700 text-sm mt-1">If an account with that email exists, a reset link has been sent. Check your spam folder if you don't see it.</p>
+                <p class="text-green-700 text-sm mt-1">A reset link has been sent to {{ email }}.</p>
               </div>
             </div>
           </Transition>
