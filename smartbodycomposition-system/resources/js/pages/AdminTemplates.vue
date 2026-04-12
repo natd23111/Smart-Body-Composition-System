@@ -84,7 +84,6 @@
             </div>
             <div>
               <p class="font-semibold text-gray-900 text-sm">{{ template.title }}</p>
-              <p class="font-mono text-xs text-gray-400">{{ template.template_code }}</p>
             </div>
           </div>
           <span :class="['px-2 py-0.5 rounded-full text-xs font-semibold', template.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500']">

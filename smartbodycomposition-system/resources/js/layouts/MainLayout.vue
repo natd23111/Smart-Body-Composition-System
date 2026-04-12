@@ -74,7 +74,16 @@
               </svg>
             </button>
             <div class="absolute right-0 mt-0 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block border border-gray-200 z-10">
-              <router-link to="/settings" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 rounded-t-lg">Settings</router-link>
+              <router-link :to="{ path: '/home', hash: '#recent-activity' }" class="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 rounded-t-lg">
+                <span>Recent Activity</span>
+                <span
+                  v-if="unreadCount > 0"
+                  class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center"
+                >
+                  {{ unreadCount > 99 ? '99+' : unreadCount }}
+                </span>
+              </router-link>
+              <router-link to="/settings" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600">Settings</router-link>
               <button
                 @click="handleLogout"
                 :disabled="logoutLoading"
@@ -110,15 +119,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authPiniaStore'
 import { getUserProfile } from '../services/authService'
+import { activityService } from '../services/api'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const logoutLoading = ref(false)
+const unreadCount = ref(0)
 
 // Get user info
 const userName = computed(() => authStore.user?.value?.name || authStore.user?.name || 'User')
@@ -141,12 +152,37 @@ async function refreshUserProfile() {
   }
 }
 
+async function refreshActivityCount() {
+  if (!localStorage.getItem('auth_token')) {
+    unreadCount.value = 0
+    return
+  }
+
+  try {
+    const response = await activityService.getAll()
+    unreadCount.value = response.data.meta?.unread_count ?? 0
+  } catch {
+    // ignore badge refresh errors
+  }
+}
+
+function handleActivityCountEvent(event) {
+  unreadCount.value = event.detail?.unreadCount ?? 0
+}
+
 onMounted(() => {
   refreshUserProfile()
+  refreshActivityCount()
+  window.addEventListener('notifications-unread-count', handleActivityCountEvent)
 })
 
-watch(() => route.path, () => {
+onBeforeUnmount(() => {
+  window.removeEventListener('notifications-unread-count', handleActivityCountEvent)
+})
+
+watch(() => route.fullPath, () => {
   refreshUserProfile()
+  refreshActivityCount()
 })
 
 // Check if user is admin

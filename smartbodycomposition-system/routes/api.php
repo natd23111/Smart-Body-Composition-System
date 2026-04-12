@@ -6,6 +6,8 @@ use App\Http\Controllers\HealthRecommendationController;
 use App\Http\Controllers\TrendsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\NotificationController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 // Public Auth Routes
@@ -42,11 +44,12 @@ Route::post('/login', function (Request $request) {
         'password' => 'required',
     ]);
 
-    if (!auth()->attempt($request->only('email', 'password'))) {
+    if (!Auth::attempt($request->only('email', 'password'))) {
         return response()->json(['error' => 'Invalid credentials'], 401);
     }
 
-    $user = auth()->user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
     $token = $user->createToken('api-token')->plainTextToken;
 
     return response()->json([
@@ -147,6 +150,44 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($request->user());
     });
 
+    Route::get('/user/notification-preferences', function (Request $request) {
+        $user = $request->user();
+
+        return response()->json([
+            'notifications' => (bool) $user->notifications_enabled,
+            'emailAlerts' => (bool) $user->email_alerts_enabled,
+            'weeklyReport' => (bool) $user->weekly_reports_enabled,
+            'goalReminders' => (bool) $user->measurement_reminders_enabled,
+        ]);
+    });
+
+    Route::put('/user/notification-preferences', function (Request $request) {
+        $validated = $request->validate([
+            'notifications' => 'required|boolean',
+            'emailAlerts' => 'required|boolean',
+            'weeklyReport' => 'required|boolean',
+            'goalReminders' => 'required|boolean',
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'notifications_enabled' => $validated['notifications'],
+            'email_alerts_enabled' => $validated['emailAlerts'],
+            'weekly_reports_enabled' => $validated['weeklyReport'],
+            'measurement_reminders_enabled' => $validated['goalReminders'],
+        ]);
+
+        return response()->json([
+            'message' => 'Notification preferences updated successfully',
+            'preferences' => [
+                'notifications' => (bool) $user->notifications_enabled,
+                'emailAlerts' => (bool) $user->email_alerts_enabled,
+                'weeklyReport' => (bool) $user->weekly_reports_enabled,
+                'goalReminders' => (bool) $user->measurement_reminders_enabled,
+            ],
+        ]);
+    });
+
     Route::put('/user/profile', function (Request $request) {
 
         $request->validate([
@@ -227,6 +268,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('goals/{goal}', [GoalController::class, 'update']);
     Route::delete('goals/{goal}', [GoalController::class, 'destroy']);
 
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+    Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
+
     // Recommendations
     Route::get('recommendations', [HealthRecommendationController::class, 'index']);
     Route::post('recommendations/generate', [HealthRecommendationController::class, 'generate']);
@@ -237,6 +282,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('admin/dashboard', [AdminController::class, 'dashboard']);
     Route::get('admin/users', [AdminController::class, 'users']);
+    Route::post('admin/users', [AdminController::class, 'storeUser']);
+    Route::put('admin/users/{id}', [AdminController::class, 'updateUser']);
     Route::delete('admin/users/{id}', [AdminController::class, 'deleteUser']);
     Route::get('admin/records', [AdminController::class, 'records']);
 

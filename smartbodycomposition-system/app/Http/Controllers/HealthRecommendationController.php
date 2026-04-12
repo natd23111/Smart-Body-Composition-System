@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\HealthRecommendation;
 use App\Services\RecommendationEngine;
+use App\Services\UserNotificationService;
 
 class HealthRecommendationController extends Controller
 {
-    public function __construct(private RecommendationEngine $recommendationEngine)
+    public function __construct(
+        private RecommendationEngine $recommendationEngine,
+        private UserNotificationService $notificationService,
+    )
     {
     }
 
@@ -19,7 +23,22 @@ class HealthRecommendationController extends Controller
 
     public function generate(Request $request)
     {
-        return response()->json($this->recommendationEngine->syncForUser($request->user()));
+        $result = $this->recommendationEngine->syncForUser($request->user());
+
+        $latestMeasurement = $request->user()->bodyCompositions()
+            ->orderByDesc('measurement_date')
+            ->orderByDesc('created_at')
+            ->first();
+
+        $sourceKey = $latestMeasurement ? 'measurement-' . $latestMeasurement->id : 'manual-' . now()->toDateString();
+
+        $this->notificationService->notifyRecommendationsGenerated(
+            $request->user(),
+            count($result['data'] ?? []),
+            $sourceKey
+        );
+
+        return response()->json($result);
     }
 
     public function updateStatus(Request $request, HealthRecommendation $recommendation)

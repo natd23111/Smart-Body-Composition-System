@@ -25,6 +25,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'account_status',
+        'notifications_enabled',
+        'email_alerts_enabled',
+        'weekly_reports_enabled',
+        'measurement_reminders_enabled',
         'age',
         'gender',
         'height_cm',
@@ -51,6 +56,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'notifications_enabled' => 'boolean',
+            'email_alerts_enabled' => 'boolean',
+            'weekly_reports_enabled' => 'boolean',
+            'measurement_reminders_enabled' => 'boolean',
         ];
     }
 

@@ -2,15 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\BodyComposition;
+use App\Services\GoalProgressService;
+use App\Services\RecommendationEngine;
+use App\Services\UserNotificationService;
+use Illuminate\Http\Request;
 
 class BodyCompositionController extends Controller
 {
+    public function __construct(
+        private readonly RecommendationEngine $recommendationEngine,
+        private readonly UserNotificationService $notificationService,
+        private readonly GoalProgressService $goalProgressService,
+    ) {
+    }
+
     // Display all records for logged-in user
-    public function index()
+    public function index(Request $request)
     {
-        $data = BodyComposition::where('user_id', auth()->id())->latest()->get();
+        $data = BodyComposition::where('user_id', $request->user()->id)->latest()->get();
         return response()->json($data);
     }
 
@@ -32,9 +42,18 @@ class BodyCompositionController extends Controller
             'visceral_fat' => 'nullable|numeric',
         ]);
 
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = $request->user()->id;
 
         $record = BodyComposition::create($validated);
+        $user = $request->user();
+
+        $recommendations = $this->recommendationEngine->syncForUser($user);
+        $this->notificationService->notifyRecommendationsGenerated(
+            $user,
+            count($recommendations['data'] ?? []),
+            'measurement-' . $record->id
+        );
+        $this->goalProgressService->evaluateLatestMeasurementGoals($user, $this->notificationService);
 
         return response()->json([
             'message' => 'Record saved successfully',
@@ -43,12 +62,12 @@ class BodyCompositionController extends Controller
     }
 
     // Show single record
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $record = BodyComposition::findOrFail($id);
 
         // Security check
-        if ($record->user_id !== auth()->id()) {
+        if ($record->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -60,11 +79,12 @@ class BodyCompositionController extends Controller
     {
         $record = BodyComposition::findOrFail($id);
 
-        if ($record->user_id !== auth()->id()) {
+        if ($record->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $record->update($request->all());
+        $this->goalProgressService->evaluateLatestMeasurementGoals($request->user(), $this->notificationService);
 
         return response()->json([
             'message' => 'Updated successfully',
@@ -73,11 +93,11 @@ class BodyCompositionController extends Controller
     }
 
     // Delete record
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $record = BodyComposition::findOrFail($id);
 
-        if ($record->user_id !== auth()->id()) {
+        if ($record->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 

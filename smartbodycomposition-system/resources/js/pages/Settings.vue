@@ -347,6 +347,20 @@
         </div>
       </div>
 
+      <div class="flex justify-end gap-4">
+        <button
+          @click="saveSystemPreferences"
+          :disabled="savingSystem"
+          class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center gap-2"
+        >
+          <svg v-if="savingSystem" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ savingSystem ? 'Saving...' : 'Save Preferences' }}
+        </button>
+      </div>
+
       <!-- Account Information -->
       <div class="bg-white rounded-lg shadow border border-gray-300">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -430,7 +444,14 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authPiniaStore'
 import { useUnitStore } from '@/stores/unitStore'
-import { getUserProfile, updateUserProfile, changePassword, deleteAccount } from '@/services/authService'
+import {
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+  deleteAccount,
+  getUserNotificationPreferences,
+  updateUserNotificationPreferences,
+} from '@/services/authService'
 
 const authStore = useAuthStore()
 const unitStore = useUnitStore()
@@ -440,6 +461,7 @@ const activeTab = ref('personal')
 const showPassword = ref(false)
 const savingPersonal = ref(false)
 const savingPassword = ref(false)
+const savingSystem = ref(false)
 const showDeleteModal = ref(false)
 const deletingAccount = ref(false)
 const deletePassword = ref('')
@@ -496,6 +518,12 @@ onMounted(async () => {
     if (profile.created_at) {
       memberSince.value = new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     }
+
+    const preferences = await getUserNotificationPreferences()
+    systemPrefs.value.notifications = preferences.notifications
+    systemPrefs.value.emailAlerts = preferences.emailAlerts
+    systemPrefs.value.weeklyReport = preferences.weeklyReport
+    systemPrefs.value.goalReminders = preferences.goalReminders
   } catch (error) {
     console.error('Failed to load profile:', error)
     errorMessage.value = 'Failed to load your profile'
@@ -616,6 +644,37 @@ const savePasswordChange = async () => {
     errorMessage.value = error.message || 'Failed to change password. Please try again.'
   } finally {
     savingPassword.value = false
+  }
+}
+
+const saveSystemPreferences = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+  savingSystem.value = true
+
+  try {
+    unitStore.setUnits(systemPrefs.value.weightUnit, systemPrefs.value.heightUnit)
+
+    const preferences = await updateUserNotificationPreferences({
+      notifications: systemPrefs.value.notifications,
+      emailAlerts: systemPrefs.value.emailAlerts,
+      weeklyReport: systemPrefs.value.weeklyReport,
+      goalReminders: systemPrefs.value.goalReminders,
+    })
+
+    systemPrefs.value.notifications = preferences.notifications
+    systemPrefs.value.emailAlerts = preferences.emailAlerts
+    systemPrefs.value.weeklyReport = preferences.weeklyReport
+    systemPrefs.value.goalReminders = preferences.goalReminders
+
+    successMessage.value = 'System preferences updated successfully!'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    errorMessage.value = error.message || 'Failed to update system preferences. Please try again.'
+  } finally {
+    savingSystem.value = false
   }
 }
 

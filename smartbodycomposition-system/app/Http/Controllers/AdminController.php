@@ -7,6 +7,7 @@ use App\Models\BodyComposition;
 use App\Models\RecommendationTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -64,29 +65,60 @@ class AdminController extends Controller
         $users = User::withCount('bodyCompositions')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($user) use ($thirtyDaysAgo) {
-                $lastRecord = $user->bodyCompositions()->latest('created_at')->first();
-
-                return [
-                    'id'            => $user->id,
-                    'name'          => $user->name,
-                    'email'         => $user->email,
-                    'role'          => $user->role->value,
-                    'created_at'    => $user->created_at->format('Y-m-d'),
-                    'last_activity' => $lastRecord ? $lastRecord->created_at->diffForHumans() : 'No records',
-                    'record_count'  => $user->body_compositions_count,
-                    'status'        => ($lastRecord && $lastRecord->created_at->gte($thirtyDaysAgo))
-                                        ? 'Active' : 'Inactive',
-                ];
-            });
+            ->map(fn ($user) => $this->formatUserForAdmin($user, $thirtyDaysAgo));
 
         return response()->json($users);
     }
 
-    // Delete user
-    public function deleteUser($id)
+    public function storeUser(Request $request)
     {
-        User::findOrFail($id)->delete();
+        $validated = $request->validate([
+            'name' => 'required|string|min:2|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:user,admin',
+            'account_status' => 'required|in:Active,Inactive',
+        ]);
+
+        $user = User::create($validated);
+
+        return response()->json(
+            $this->formatUserForAdmin($user->loadCount('bodyCompositions'), Carbon::now()->subDays(30)),
+            201
+        );
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|min:2|max:255',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'role' => 'required|in:user,admin',
+            'account_status' => 'required|in:Active,Inactive',
+            'password' => 'nullable|string|min:8',
+        ]);
+
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return response()->json(
+            $this->formatUserForAdmin($user->fresh()->loadCount('bodyCompositions'), Carbon::now()->subDays(30))
+        );
+    }
+
+    // Delete user
+    public function deleteUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        abort_if($request->user()->id === $user->id, 422, 'You cannot delete your own admin account.');
+
+        $user->delete();
 
         return response()->json(['message' => 'User deleted']);
     }
@@ -158,5 +190,23 @@ class AdminController extends Controller
         RecommendationTemplate::findOrFail($id)->delete();
 
         return response()->json(['message' => 'Template deleted']);
+    }
+
+    private function formatUserForAdmin(User $user, Carbon $thirtyDaysAgo): array
+    {
+        $lastRecord = $user->bodyCompositions()->latest('created_at')->first();
+        $activityStatus = ($lastRecord && $lastRecord->created_at->gte($thirtyDaysAgo)) ? 'Active' : 'Inactive';
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role->value,
+            'created_at' => $user->created_at->format('Y-m-d'),
+            'last_activity' => $lastRecord ? $lastRecord->created_at->diffForHumans() : 'No records',
+            'record_count' => $user->body_compositions_count ?? $user->bodyCompositions()->count(),
+            'status' => $user->account_status ?? 'Active',
+            'activity_status' => $activityStatus,
+        ];
     }
 }

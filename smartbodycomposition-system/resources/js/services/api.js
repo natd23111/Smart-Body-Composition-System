@@ -89,6 +89,12 @@ export const goalService = {
   remove: (id)         => api.delete(`/goals/${id}`),
 };
 
+// ==================== RECENT ACTIVITY ENDPOINTS ====================
+export const activityService = {
+  getAll: () => api.get('/notifications'),
+  markAllSeen: () => api.post('/notifications/mark-all-read'),
+};
+
 // ==================== ADMIN ENDPOINTS ====================
 export const adminService = {
   // Get dashboard stats
@@ -98,6 +104,12 @@ export const adminService = {
   // Get all users
   getUsers: (params) =>
     api.get('/admin/users', { params }),
+
+  createUser: (data) =>
+    api.post('/admin/users', data),
+
+  updateUser: (id, data) =>
+    api.put(`/admin/users/${id}`, data),
 
   // Delete user
   deleteUser: (id) =>

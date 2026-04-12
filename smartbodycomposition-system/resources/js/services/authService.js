@@ -173,6 +173,59 @@ export async function getUserProfile() {
   }
 }
 
+export async function getUserNotificationPreferences() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/notification-preferences`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch notification preferences')
+    }
+
+    return data
+  } catch (error) {
+    throw new Error(error.message || 'Failed to fetch notification preferences. Please try again.')
+  }
+}
+
+export async function updateUserNotificationPreferences(preferences) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/notification-preferences`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(preferences),
+    })
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('Invalid server response')
+    }
+
+    if (!response.ok) {
+      if (data.errors) {
+        const firstError = Object.values(data.errors)[0][0]
+        throw new Error(firstError)
+      }
+      throw new Error(data.message || 'Failed to update notification preferences')
+    }
+
+    return data.preferences
+  } catch (error) {
+    throw new Error(error.message || 'Failed to update notification preferences. Please try again.')
+  }
+}
+
 export async function updateUserProfile(profileData) {
   try {
     const response = await fetch(`${API_BASE_URL}/user/profile`, {
