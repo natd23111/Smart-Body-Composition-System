@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class GoalAchievedNotification extends Notification
@@ -17,7 +18,13 @@ class GoalAchievedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable->email_alerts_enabled) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toArray(object $notifiable): array
@@ -30,5 +37,15 @@ class GoalAchievedNotification extends Notification
             'dedupe_key' => $this->dedupeKey,
             'priority' => 'high',
         ];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage())
+            ->subject('You achieved a health goal')
+            ->greeting('Hello ' . ($notifiable->name ?? 'there') . ',')
+            ->line("You reached your {$this->metricLabel} goal.")
+            ->line('Review your progress and set the next target when you are ready.')
+            ->action('View Goals', url('/goals'));
     }
 }

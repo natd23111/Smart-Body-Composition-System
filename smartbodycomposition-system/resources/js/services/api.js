@@ -114,6 +114,12 @@ export const adminService = {
   // Delete user
   deleteUser: (id) =>
     api.delete(`/admin/users/${id}`),
+
+  getSettings: () =>
+    api.get('/admin/settings'),
+
+  updateSettings: (data) =>
+    api.put('/admin/settings', data),
 };
 
 export default api;

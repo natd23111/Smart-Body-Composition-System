@@ -286,6 +286,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('admin/users/{id}', [AdminController::class, 'updateUser']);
     Route::delete('admin/users/{id}', [AdminController::class, 'deleteUser']);
     Route::get('admin/records', [AdminController::class, 'records']);
+    Route::get('admin/settings', [AdminController::class, 'settings']);
+    Route::put('admin/settings', [AdminController::class, 'updateSettings']);
 
     // Recommendation Templates CRUD
     Route::get('admin/templates', [AdminController::class, 'templates']);

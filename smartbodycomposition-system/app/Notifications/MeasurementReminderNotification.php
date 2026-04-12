@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class MeasurementReminderNotification extends Notification
@@ -17,7 +18,13 @@ class MeasurementReminderNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable->email_alerts_enabled) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toArray(object $notifiable): array
@@ -30,5 +37,14 @@ class MeasurementReminderNotification extends Notification
             'dedupe_key' => $this->dedupeKey,
             'priority' => 'medium',
         ];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage())
+            ->subject('Reminder to log a new measurement')
+            ->greeting('Hello ' . ($notifiable->name ?? 'there') . ',')
+            ->line($this->message)
+            ->action('Log Measurement', url('/body-composition'));
     }
 }

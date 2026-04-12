@@ -173,6 +173,7 @@ function handleActivityCountEvent(event) {
 onMounted(() => {
   refreshUserProfile()
   refreshActivityCount()
+
   window.addEventListener('notifications-unread-count', handleActivityCountEvent)
 })
 

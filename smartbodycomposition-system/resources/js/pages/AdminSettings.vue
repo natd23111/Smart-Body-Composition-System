@@ -15,20 +15,6 @@
       Settings saved successfully.
     </div>
 
-    <!-- Notification Settings -->
-    <section class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-      <h2 class="text-lg font-semibold text-gray-900">Notification Settings</h2>
-      <div class="space-y-3">
-        <label v-for="notif in notificationOptions" :key="notif.key" class="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            v-model="form.notifications[notif.key]"
-            class="h-4 w-4 rounded text-green-600 border-gray-300 focus:ring-green-500"
-          />
-          <span class="text-sm text-gray-700">{{ notif.label }}</span>
-        </label>
-      </div>
-    </section>
 
     <!-- Email Configuration -->
     <section class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
@@ -43,8 +29,20 @@
           <input v-model="form.smtp.port" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="587" />
         </div>
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">SMTP Username</label>
+          <input v-model="form.smtp.username" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="smtp-user" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">SMTP Password</label>
+          <input v-model="form.smtp.password" type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="••••••••" />
+        </div>
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">From Address</label>
           <input v-model="form.smtp.from" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="noreply@smartbody.app" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+          <input v-model="form.smtp.from_name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Smart Body Composition" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Encryption</label>
@@ -72,25 +70,6 @@
       </div>
     </section>
 
-    <!-- Maintenance Mode -->
-    <section class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900">Maintenance Mode</h2>
-          <p class="text-sm text-gray-500">Enabling this will show a maintenance page to all non-admin users.</p>
-        </div>
-        <button
-          @click="form.maintenanceMode = !form.maintenanceMode"
-          :class="['relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none', form.maintenanceMode ? 'bg-red-500' : 'bg-gray-300']"
-        >
-          <span :class="['inline-block h-4 w-4 transform rounded-full bg-white transition-transform', form.maintenanceMode ? 'translate-x-6' : 'translate-x-1']"></span>
-        </button>
-      </div>
-      <div v-if="form.maintenanceMode" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-        Maintenance mode is <strong>enabled</strong>. Regular users will not be able to access the system.
-      </div>
-    </section>
-
     <!-- Action Buttons -->
     <div class="flex items-center gap-3 pb-8">
       <button
@@ -107,18 +86,16 @@
       </button>
     </div>
 
-    <!-- Info Box -->
-    <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-      <p><span class="font-semibold">Admin only:</span> These settings affect all users in the system. Changes take effect immediately unless stated otherwise. Always test changes in a staging environment if possible.</p>
-    </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { adminService } from '@/services/api'
 
 const saved = ref(false)
+const loading = ref(true)
+const error = ref('')
 
 const defaults = {
   weightUnit: 'kg',
@@ -134,7 +111,10 @@ const defaults = {
   smtp: {
     host: 'smtp.mailtrap.io',
     port: 587,
+    username: '',
+    password: '',
     from: 'noreply@smartbody.app',
+    from_name: 'Smart Body Composition',
     encryption: 'tls',
   },
   sessionTimeout: 120,
@@ -157,12 +137,53 @@ const notificationOptions = [
 ]
 
 function saveSettings() {
-  saved.value = true
-  setTimeout(() => { saved.value = false }, 3000)
+  persistSettings()
 }
 
 function resetSettings() {
   form.value = JSON.parse(JSON.stringify(defaults))
   saved.value = false
+  error.value = ''
 }
+
+async function loadSettings() {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const response = await adminService.getSettings()
+    const data = response.data
+    defaults.notifications = { ...defaults.notifications, ...(data.notifications ?? {}) }
+    defaults.smtp = { ...defaults.smtp, ...(data.smtp ?? {}) }
+    defaults.sessionTimeout = data.sessionTimeout ?? defaults.sessionTimeout
+    defaults.maxLoginAttempts = data.maxLoginAttempts ?? defaults.maxLoginAttempts
+    defaults.maintenanceMode = data.maintenanceMode ?? defaults.maintenanceMode
+    form.value = JSON.parse(JSON.stringify(defaults))
+  } catch (requestError) {
+    error.value = requestError.response?.data?.message || requestError.message || 'Failed to load settings.'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function persistSettings() {
+  error.value = ''
+
+  try {
+    const response = await adminService.updateSettings(form.value)
+    const data = response.data.data
+    defaults.notifications = { ...defaults.notifications, ...(data.notifications ?? {}) }
+    defaults.smtp = { ...defaults.smtp, ...(data.smtp ?? {}) }
+    defaults.sessionTimeout = data.sessionTimeout ?? defaults.sessionTimeout
+    defaults.maxLoginAttempts = data.maxLoginAttempts ?? defaults.maxLoginAttempts
+    defaults.maintenanceMode = data.maintenanceMode ?? defaults.maintenanceMode
+    form.value = JSON.parse(JSON.stringify(defaults))
+    saved.value = true
+    setTimeout(() => { saved.value = false }, 3000)
+  } catch (requestError) {
+    error.value = requestError.response?.data?.message || requestError.message || 'Failed to save settings.'
+  }
+}
+
+onMounted(loadSettings)
 </script>

@@ -285,20 +285,6 @@
           <p class="text-sm text-gray-600 mt-1">Manage how you receive updates</p>
         </div>
         <div class="px-6 py-4 space-y-3">
-          <!-- Push Notifications -->
-          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
-            <div>
-              <p class="font-medium text-sm text-gray-900">Push Notifications</p>
-              <p class="text-xs text-gray-600">Receive push notifications on your device</p>
-            </div>
-            <label class="flex items-center cursor-pointer">
-              <input
-                v-model="systemPrefs.notifications"
-                type="checkbox"
-                class="w-4 h-4"
-              />
-            </label>
-          </div>
 
           <!-- Email Alerts -->
           <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">

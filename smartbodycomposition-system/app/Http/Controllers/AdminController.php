@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\BodyComposition;
 use App\Models\RecommendationTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
@@ -190,6 +192,92 @@ class AdminController extends Controller
         RecommendationTemplate::findOrFail($id)->delete();
 
         return response()->json(['message' => 'Template deleted']);
+    }
+
+    public function settings()
+    {
+        $defaults = [
+            'notifications' => [
+                'emailOnRegister' => true,
+                'emailOnGoalAchieved' => true,
+                'emailOnInactivity' => false,
+                'weeklyDigest' => false,
+            ],
+            'smtp' => [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port', 587),
+                'username' => '',
+                'password' => '',
+                'from' => config('mail.from.address'),
+                'from_name' => config('mail.from.name', config('app.name')),
+                'encryption' => config('mail.mailers.smtp.scheme', 'tls') ?? 'none',
+            ],
+            'sessionTimeout' => 120,
+            'maxLoginAttempts' => 5,
+            'maintenanceMode' => false,
+        ];
+
+        $smtp = SystemSetting::getDecoded('smtp_settings', $defaults['smtp']);
+        $notificationSettings = SystemSetting::getDecoded('admin_notification_settings', $defaults['notifications']);
+        $securitySettings = SystemSetting::getDecoded('admin_security_settings', [
+            'sessionTimeout' => $defaults['sessionTimeout'],
+            'maxLoginAttempts' => $defaults['maxLoginAttempts'],
+            'maintenanceMode' => $defaults['maintenanceMode'],
+        ]);
+
+        if (is_array($smtp) && !empty($smtp['password'])) {
+            try {
+                $smtp['password'] = Crypt::decryptString($smtp['password']);
+            } catch (\Throwable) {
+                $smtp['password'] = '';
+            }
+        }
+
+        return response()->json([
+            'notifications' => array_merge($defaults['notifications'], is_array($notificationSettings) ? $notificationSettings : []),
+            'smtp' => array_merge($defaults['smtp'], is_array($smtp) ? $smtp : []),
+            'sessionTimeout' => $securitySettings['sessionTimeout'] ?? $defaults['sessionTimeout'],
+            'maxLoginAttempts' => $securitySettings['maxLoginAttempts'] ?? $defaults['maxLoginAttempts'],
+            'maintenanceMode' => (bool) ($securitySettings['maintenanceMode'] ?? $defaults['maintenanceMode']),
+        ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'notifications' => 'required|array',
+            'notifications.emailOnRegister' => 'required|boolean',
+            'notifications.emailOnGoalAchieved' => 'required|boolean',
+            'notifications.emailOnInactivity' => 'required|boolean',
+            'notifications.weeklyDigest' => 'required|boolean',
+            'smtp' => 'required|array',
+            'smtp.host' => 'nullable|string|max:255',
+            'smtp.port' => 'nullable|integer|min:1|max:65535',
+            'smtp.username' => 'nullable|string|max:255',
+            'smtp.password' => 'nullable|string|max:255',
+            'smtp.from' => 'nullable|email',
+            'smtp.from_name' => 'nullable|string|max:255',
+            'smtp.encryption' => 'required|in:tls,ssl,none',
+            'sessionTimeout' => 'required|integer|min:5|max:1440',
+            'maxLoginAttempts' => 'required|integer|min:3|max:20',
+            'maintenanceMode' => 'required|boolean',
+        ]);
+
+        $smtp = $validated['smtp'];
+        $smtp['password'] = !empty($smtp['password']) ? Crypt::encryptString($smtp['password']) : '';
+
+        SystemSetting::putEncoded('smtp_settings', $smtp);
+        SystemSetting::putEncoded('admin_notification_settings', $validated['notifications']);
+        SystemSetting::putEncoded('admin_security_settings', [
+            'sessionTimeout' => $validated['sessionTimeout'],
+            'maxLoginAttempts' => $validated['maxLoginAttempts'],
+            'maintenanceMode' => $validated['maintenanceMode'],
+        ]);
+
+        return response()->json([
+            'message' => 'Settings saved successfully.',
+            'data' => $this->settings()->getData(true),
+        ]);
     }
 
     private function formatUserForAdmin(User $user, Carbon $thirtyDaysAgo): array

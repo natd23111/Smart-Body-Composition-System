@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class WeeklyReportNotification extends Notification
@@ -17,7 +18,13 @@ class WeeklyReportNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if ($notifiable->email_alerts_enabled) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toArray(object $notifiable): array
@@ -30,5 +37,15 @@ class WeeklyReportNotification extends Notification
             'dedupe_key' => $this->dedupeKey,
             'priority' => 'low',
         ];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage())
+            ->subject('Your weekly health report is ready')
+            ->greeting('Hello ' . ($notifiable->name ?? 'there') . ',')
+            ->line($this->summary)
+            ->action('Open Trends', url('/trends'))
+            ->line('Review your 7-day trends to see what changed this week.');
     }
 }
