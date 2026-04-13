@@ -6,6 +6,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\BodyComposition;
 use App\Models\RecommendationTemplate;
+use App\Support\AdminSecuritySettings;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -197,6 +198,8 @@ class AdminController extends Controller
 
     public function settings()
     {
+        $securityDefaults = AdminSecuritySettings::defaults();
+
         $defaults = [
             'notifications' => [
                 'emailOnRegister' => true,
@@ -217,18 +220,14 @@ class AdminController extends Controller
                     default => 'tls',
                 },
             ],
-            'sessionTimeout' => 120,
-            'maxLoginAttempts' => 5,
-            'maintenanceMode' => false,
+            'sessionTimeout' => $securityDefaults['sessionTimeout'],
+            'maxLoginAttempts' => $securityDefaults['maxLoginAttempts'],
+            'maintenanceMode' => $securityDefaults['maintenanceMode'],
         ];
 
         $smtp = SystemSetting::getDecoded('smtp_settings', $defaults['smtp']);
         $notificationSettings = SystemSetting::getDecoded('admin_notification_settings', $defaults['notifications']);
-        $securitySettings = SystemSetting::getDecoded('admin_security_settings', [
-            'sessionTimeout' => $defaults['sessionTimeout'],
-            'maxLoginAttempts' => $defaults['maxLoginAttempts'],
-            'maintenanceMode' => $defaults['maintenanceMode'],
-        ]);
+        $securitySettings = AdminSecuritySettings::all();
 
         if (is_array($smtp) && !empty($smtp['password'])) {
             try {

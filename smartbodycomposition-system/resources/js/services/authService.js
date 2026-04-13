@@ -102,7 +102,7 @@ export async function loginUser(email, password) {
             const firstError = Object.values(data.errors)[0][0]
             throw new Error(firstError)
         }
-        throw new Error(data.message || 'Invalid email or password')
+      throw new Error(data.error || data.message || 'Invalid email or password')
         }
 
     // Store token and user data
@@ -164,6 +164,11 @@ export async function getUserProfile() {
     }
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user')
+      }
+
       throw new Error(data.message || 'Failed to fetch profile')
     }
 

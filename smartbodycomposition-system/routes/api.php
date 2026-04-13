@@ -1,6 +1,7 @@
 <?php
 
 use App\Mail\PasswordResetMail;
+use App\Support\AdminSecuritySettings;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BodyCompositionController;
 use App\Http\Controllers\HealthRecommendationController;
@@ -11,6 +12,8 @@ use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 // Public Auth Routes
 Route::post('/register', function (Request $request) {
@@ -46,9 +49,24 @@ Route::post('/login', function (Request $request) {
         'password' => 'required',
     ]);
 
+    $loginKey = 'login:' . Str::lower($request->string('email')->toString()) . '|' . $request->ip();
+    $maxAttempts = AdminSecuritySettings::maxLoginAttempts();
+
+    if (RateLimiter::tooManyAttempts($loginKey, $maxAttempts)) {
+        $seconds = RateLimiter::availableIn($loginKey);
+
+        return response()->json([
+            'message' => 'Too many login attempts. Try again in ' . $seconds . ' seconds.',
+        ], 429);
+    }
+
     if (!Auth::attempt($request->only('email', 'password'))) {
+        RateLimiter::hit($loginKey, 900);
+
         return response()->json(['error' => 'Invalid credentials'], 401);
     }
+
+    RateLimiter::clear($loginKey);
 
     /** @var \App\Models\User $user */
     $user = Auth::user();
@@ -76,7 +94,7 @@ Route::post('/check-email', function (Request $request) {
 Route::post('/logout', function (Request $request) {
     $request->user()->currentAccessToken()->delete();
     return response()->json(['message' => 'Logged out']);
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'session.timeout']);
 
 Route::post('/forgot-password', function (Request $request) {
     $request->validate(['email' => 'required|email']);
@@ -149,7 +167,7 @@ Route::post('/reset-password', function (Request $request) {
 });
 
 // User Profile Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'session.timeout'])->group(function () {
     Route::get('/user/profile', function (Request $request) {
         return response()->json($request->user());
     });
@@ -258,7 +276,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Protected Routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'session.timeout'])->group(function () {
 
     // Body Composition
     Route::apiResource('body-compositions', BodyCompositionController::class);
@@ -283,7 +301,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Admin Routes (admin-only)
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'session.timeout', 'admin'])->group(function () {
     Route::get('admin/dashboard', [AdminController::class, 'dashboard']);
     Route::get('admin/users', [AdminController::class, 'users']);
     Route::post('admin/users', [AdminController::class, 'storeUser']);

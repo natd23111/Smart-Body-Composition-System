@@ -46,14 +46,6 @@
               </p>
             </div>
           </div>
-          <button
-            v-if="!loadingActivity && totalUnreadActivityCount > 0"
-            @click="markAllActivitySeen"
-            :disabled="markingActivitySeen"
-            class="px-3 py-1.5 border border-green-600 text-green-700 rounded-lg text-xs font-medium hover:bg-green-50 transition-colors disabled:opacity-50"
-          >
-            {{ markingActivitySeen ? 'Updating...' : 'Mark All as Seen' }}
-          </button>
         </div>
         <div class="px-6 py-4">
           <!-- Loading -->
@@ -94,9 +86,14 @@
                 <p class="text-sm text-gray-500 truncate">{{ activity.description }}</p>
                 <div class="flex items-center gap-3 mt-0.5 flex-wrap">
                   <p class="text-xs text-gray-400">{{ activity.time }}</p>
-                  <router-link v-if="activity.actionUrl" :to="activity.actionUrl" class="text-xs font-medium text-green-600 hover:text-green-700">
+                  <button
+                    v-if="activity.actionUrl"
+                    type="button"
+                    @click="openActivity(activity)"
+                    class="text-xs font-medium text-green-600 hover:text-green-700"
+                  >
                     Open
-                  </router-link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -190,51 +187,6 @@
       </div>
     </div>
 
-    <!-- Health Tips -->
-    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-100 shadow">
-      <div class="px-6 py-4 border-b border-green-100 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <svg class="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-          <div>
-            <h3 class="font-semibold text-gray-900">Health Recommendations</h3>
-            <p class="text-xs text-gray-500">
-              <span v-if="loadingTips">Loading recommendations...</span>
-              <span v-else-if="tipsFromBackend.length > 0">Based on your latest measurements</span>
-              <span v-else>General wellness tips &mdash; log a measurement for personalised guidance</span>
-            </p>
-          </div>
-        </div>
-        <router-link v-if="tipsFromBackend.length > 0" to="/recommendations" class="text-sm text-green-600 hover:text-green-700 font-medium">View all &rarr;</router-link>
-      </div>
-
-      <!-- Loading skeleton -->
-      <div v-if="loadingTips" class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div v-for="n in 3" :key="n" class="flex items-start gap-3 p-4 bg-white rounded-lg border border-green-100 animate-pulse">
-          <div class="w-5 h-5 bg-gray-200 rounded flex-shrink-0 mt-0.5"></div>
-          <div class="flex-1 space-y-2">
-            <div class="h-3 bg-gray-200 rounded w-2/3"></div>
-            <div class="h-3 bg-gray-100 rounded w-full"></div>
-            <div class="h-3 bg-gray-100 rounded w-4/5"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tips list -->
-      <div v-else class="px-6 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div
-          v-for="tip in displayedTips"
-          :key="tip.title"
-          class="flex items-start gap-3 p-4 bg-white rounded-lg border border-green-100"
-        >
-          <svg class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="ICON_PATHS[tip.icon] ?? ICON_PATHS.heart"></svg>
-          <div>
-            <p class="font-medium text-sm text-gray-900">{{ tip.title }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ tip.description }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Add Goal Modal -->
     <Teleport to="body">
       <div v-if="showGoalModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -313,10 +265,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authPiniaStore'
 import { useUnitStore } from '@/stores/unitStore'
 import { activityService, bodyCompositionService, healthRecommendationService, goalService } from '@/services/api'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const unitStore = useUnitStore()
 const MAX_ACTIVITY_ITEMS = 4
@@ -324,7 +278,6 @@ const MAX_ACTIVITY_ITEMS = 4
 const loadingActivity = ref(true)
 const loadingTips = ref(true)
 const loadingGoals = ref(true)
-const markingActivitySeen = ref(false)
 const recentRecords = ref([])
 const recentNotifications = ref([])
 const tipsFromBackend = ref([])
@@ -431,6 +384,7 @@ const recentActivity = computed(() => {
       time: formatRelativeTime(r.measurement_date || r.created_at),
       timestamp:    parseLocalDate(r.measurement_date || r.created_at),
       isNew:        false,
+      notificationId: null,
       actionUrl:    '/body-composition',
     }))
 
@@ -450,6 +404,7 @@ const recentActivity = computed(() => {
       time: formatRelativeTime(notification.created_at),
       timestamp: parseLocalDate(notification.created_at),
       isNew: !notification.is_read,
+      notificationId: notification.id,
       actionUrl: notification.action_url,
     }
   })
@@ -622,16 +577,24 @@ function publishUnreadCount() {
   }))
 }
 
-async function markAllActivitySeen() {
-  markingActivitySeen.value = true
+async function openActivity(activity) {
+  if (activity.notificationId && activity.isNew) {
+    try {
+      await activityService.markRead(activity.notificationId)
+      recentNotifications.value = recentNotifications.value.map(notification =>
+        notification.id === activity.notificationId
+          ? { ...notification, is_read: true }
+          : notification
+      )
+      totalUnreadActivityCount.value = Math.max(0, totalUnreadActivityCount.value - 1)
+      publishUnreadCount()
+    } catch {
+      // Keep navigation working even if read-state syncing fails.
+    }
+  }
 
-  try {
-    await activityService.markAllSeen()
-    recentNotifications.value = recentNotifications.value.map(notification => ({ ...notification, is_read: true }))
-    totalUnreadActivityCount.value = 0
-    publishUnreadCount()
-  } finally {
-    markingActivitySeen.value = false
+  if (activity.actionUrl) {
+    router.push(activity.actionUrl)
   }
 }
 
