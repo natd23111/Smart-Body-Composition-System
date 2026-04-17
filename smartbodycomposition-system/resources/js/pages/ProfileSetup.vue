@@ -36,16 +36,6 @@
             </div>
           </Transition>
 
-          <!-- Validation summary -->
-          <Transition name="fade">
-            <div v-if="hasValidationErrors" class="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p class="text-red-800 text-sm font-medium">Please fix the following errors:</p>
-              <ul class="mt-1 list-disc list-inside space-y-0.5">
-                <li v-for="(msg, field) in errors" :key="field" class="text-red-700 text-sm">{{ msg }}</li>
-              </ul>
-            </div>
-          </Transition>
-
           <form @submit.prevent="handleSubmit" class="space-y-5">
             <!-- Age -->
             <div class="space-y-2">
@@ -198,7 +188,7 @@ async function handleSubmit() {
     })
     authStore.user = updated
     localStorage.setItem('user', JSON.stringify(updated))
-    router.push('/dashboard')
+    router.push('/home')
   } catch (err) {
     error.value = err.message || 'Failed to save profile. Please try again.'
   } finally {
@@ -207,7 +197,7 @@ async function handleSubmit() {
 }
 
 function skipSetup() {
-  router.push('/dashboard')
+  router.push('/home')
 }
 </script>
 
