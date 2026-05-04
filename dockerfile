@@ -29,7 +29,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 # Copy production environment file for build
-COPY .env.production .env
+COPY .env.example .env
 
 # Install Node/Vite dependencies and build assets
 RUN npm install && npm run build
