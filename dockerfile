@@ -28,12 +28,18 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 
-# Install Vite plugin dependencies explicitly (add more if needed)
+
+# Install Node/Vite dependencies and build assets
 RUN npm install && npm run build
-RUN php artisan config:clear && php artisan cache:clear && npm run build
+
+# Note: Run `php artisan config:clear` and `php artisan cache:clear` at runtime (not during build) if needed.
 
 # Expose port
 EXPOSE 10000
 
-# Start Laravel server
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# Copy entrypoint script and set permissions
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use entrypoint script to clear cache and start server
+ENTRYPOINT ["/entrypoint.sh"]
