@@ -24,10 +24,12 @@ WORKDIR /var/www
 # Copy project files
 COPY . .
 
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-
+# Copy production environment file for build
+COPY .env.production .env
 
 # Install Node/Vite dependencies and build assets
 RUN npm install && npm run build
