@@ -26,8 +26,12 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install Node dependencies and build assets
-RUN npm install && chmod +x node_modules/.bin/vite && npm run build
+
+# Install Vite plugin dependencies explicitly (add more if needed)
+RUN npm install --save-dev @vitejs/plugin-vue && \
+    npm install && \
+    chmod +x node_modules/.bin/vite && \
+    npm run build
 
 # Expose port
 EXPOSE 10000
