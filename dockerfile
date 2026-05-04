@@ -30,6 +30,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Install Vite plugin dependencies explicitly (add more if needed)
 RUN npm install && npm run build
+RUN php artisan config:clear && php artisan cache:clear && npm run build
 
 # Expose port
 EXPOSE 10000
