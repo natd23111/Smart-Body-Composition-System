@@ -27,7 +27,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 # Install Node dependencies and build assets
-RUN npm install && npm run build
+RUN npm install && chmod +x node_modules/.bin/vite && npm run build
 
 # Expose port
 EXPOSE 10000
