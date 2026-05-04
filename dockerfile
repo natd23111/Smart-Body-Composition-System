@@ -28,9 +28,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 
 # Install Vite plugin dependencies explicitly (add more if needed)
-RUN npm install && \
-    chmod +x node_modules/.bin/vite && \
-    npm run build
+RUN npm install && npm run build
 
 # Expose port
 EXPOSE 10000
