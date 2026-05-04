@@ -20,5 +20,13 @@
   "bugs": {
     "url": "https://github.com/natd23111/Smart-Body-Composition-System/issues"
   },
-  "homepage": "https://github.com/natd23111/Smart-Body-Composition-System#readme"
+  "homepage": "https://github.com/natd23111/Smart-Body-Composition-System#readme",
+  "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.6",
+    "vue": "^3.5.33",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
 }
