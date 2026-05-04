@@ -1,5 +1,10 @@
 #!/bin/sh
+set -e
+
 php artisan config:clear
 php artisan cache:clear
 php artisan migrate --force
-php artisan serve --host=0.0.0.0 --port=10000
+
+# Start PHP-FPM and Nginx
+service php8.2-fpm start
+nginx -g 'daemon off;'

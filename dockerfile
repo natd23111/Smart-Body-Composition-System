@@ -34,6 +34,15 @@ RUN npm install && npm run build
 
 # Note: Run `php artisan config:clear` and `php artisan cache:clear` at runtime (not during build) if needed.
 
+# Install Nginx
+RUN apt-get update && apt-get install -y nginx
+
+# Copy nginx config
+COPY nginx.conf /etc/nginx/sites-available/default
+
+# Configure PHP-FPM to use a Unix socket
+RUN sed -i 's|listen = 9000|listen = /var/run/php/php-fpm.sock|' /usr/local/etc/php-fpm.d/www.conf
+
 # Expose port
 EXPOSE 10000
 
@@ -41,5 +50,6 @@ EXPOSE 10000
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Use entrypoint script to clear cache and start server
+# Start entrypoint script, then PHP-FPM and Nginx
 ENTRYPOINT ["/entrypoint.sh"]
+# entrypoint.sh should start php-fpm and nginx
