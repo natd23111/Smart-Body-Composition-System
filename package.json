@@ -25,6 +25,7 @@
   "homepage": "https://github.com/natd23111/Smart-Body-Composition-System#readme",
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.6",
+    "axios": "^1.16.0",
     "vue": "^3.5.33",
     "vue-router": "^4.6.4"
   },
