@@ -37,7 +37,11 @@ RUN npm install && npm run build
 # Note: Run `php artisan config:clear` and `php artisan cache:clear` at runtime (not during build) if needed.
 
 # Install Apache
-RUN apt-get update && apt-get install -y apache2
+RUN apt-get update && apt-get install -y apache2 \
+    && a2enmod rewrite
+
+# Copy custom Apache config
+COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/sites-available/default
