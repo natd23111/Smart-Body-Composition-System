@@ -36,8 +36,8 @@ RUN npm install && npm run build
 
 # Note: Run `php artisan config:clear` and `php artisan cache:clear` at runtime (not during build) if needed.
 
-# Install Nginx
-RUN apt-get update && apt-get install -y nginx
+# Install Apache
+RUN apt-get update && apt-get install -y apache2
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/sites-available/default
