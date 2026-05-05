@@ -1,5 +1,5 @@
-# Use official PHP image with extensions
-FROM php:8.2-fpm
+# Use official PHP-Apache image
+FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -36,26 +36,23 @@ RUN npm install && npm run build
 
 # Note: Run `php artisan config:clear` and `php artisan cache:clear` at runtime (not during build) if needed.
 
-# Install Apache
-RUN apt-get update && apt-get install -y apache2 \
-    && a2enmod rewrite
+# Enable Apache mod_rewrite (required for Laravel)
+RUN a2enmod rewrite
 
 # Copy custom Apache config
 COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/sites-available/default
+# (Nginx not used with Apache image, skip copying nginx.conf)
 
-# Configure PHP-FPM to use a Unix socket
-RUN sed -i 's|listen = 9000|listen = /var/run/php/php-fpm.sock|' /usr/local/etc/php-fpm.d/www.conf
+# (Not needed for mod_php)
 
-# Expose port
-EXPOSE 10000
+# Expose Apache default port
+EXPOSE 80
 
 # Copy entrypoint script and set permissions
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Start entrypoint script, then PHP-FPM and Nginx
+# Start entrypoint script (which should start Apache in foreground)
 ENTRYPOINT ["/entrypoint.sh"]
 # entrypoint.sh should start php-fpm and nginx
