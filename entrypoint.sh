@@ -2,11 +2,6 @@
 set -e
 
 
-
-# Force debug mode for troubleshooting
-export APP_DEBUG=true
-export APP_ENV=local
-
 echo "--- ENVIRONMENT VARIABLES ---"
 env
 
