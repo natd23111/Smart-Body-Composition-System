@@ -116,7 +116,7 @@
           </div>
           <div class="space-y-2">
             <div class="flex items-baseline gap-1">
-              <span class="text-3xl font-bold text-gray-900">{{ (currentData.body_fat_percent || 0).toFixed(1) }}</span>
+              <span class="text-3xl font-bold text-gray-900">{{ !isNaN(Number(currentData.body_fat_percent)) ? Number(currentData.body_fat_percent).toFixed(1) : '0.0' }}</span>
               <span class="text-gray-500 text-sm">%</span>
             </div>
             <div class="flex items-center gap-2">
@@ -426,7 +426,7 @@
                     <tr v-for="record in filteredRecords.slice(0, 5)" :key="record.id" class="border-b border-gray-200 hover:bg-gray-50">
                       <td class="py-3 px-4">{{ record.measurement_date }}</td>
                       <td class="py-3 px-4">{{ unitStore.convertWeight(record.weight_kg)?.toFixed(1) || '-' }} {{ unitStore.weightLabel }}</td>
-                      <td class="py-3 px-4">{{ record.body_fat_percent?.toFixed(1) || '-' }}%</td>
+                      <td class="py-3 px-4">{{ !isNaN(Number(record.body_fat_percent)) ? Number(record.body_fat_percent).toFixed(1) : '-' }}%</td>
                       <td class="py-3 px-4">{{ unitStore.convertWeight(record.muscle_mass)?.toFixed(1) || '-' }} {{ unitStore.weightLabel }}</td>
                     </tr>
                   </tbody>
