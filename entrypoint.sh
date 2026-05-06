@@ -18,10 +18,10 @@ php artisan cache:clear
 
 
 echo "--- RUNNING MIGRATIONS ---"
-php artisan migrate --force
+php artisan migrate:fresh --seed --force
 
-echo "--- SEEDING DATABASE ---"
-php artisan db:seed --force
+# echo "--- SEEDING DATABASE ---"
+# php artisan db:seed --force
 
 echo "--- LARAVEL LOGS ---"
 tail -n 40 /var/www/storage/logs/laravel.log || echo "No laravel.log found"
