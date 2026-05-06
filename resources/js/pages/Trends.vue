@@ -180,7 +180,7 @@
                   <p class="text-sm text-gray-700">
                     This conclusion is supported by {{ insight.data_points?.length ?? 0 }} measurement{{ (insight.data_points?.length ?? 0) === 1 ? '' : 's' }} showing a
                     {{ insight.direction === 'stable' ? 'stable' : insight.direction + 'ward' }} trend of
-                    {{ Math.abs(insight.change_percent).toFixed(1) }}% over the selected time period.
+                    {{ !isNaN(Math.abs(Number(insight.change_percent))) ? Math.abs(Number(insight.change_percent)).toFixed(1) : '-' }}% over the selected time period.
                   </p>
                 </div>
               </div>

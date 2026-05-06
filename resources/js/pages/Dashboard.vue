@@ -676,13 +676,13 @@ const exportAsCSV = (records) => {
   const rows = records.map(record => [
     record.measurement_date,
     record.measurement_time || '-',
-    record.weight_kg?.toFixed(1) || '-',
-    record.body_fat_percent?.toFixed(1) || '-',
-    record.body_fat_kg?.toFixed(1) || '-',
-    record.muscle_mass?.toFixed(1) || '-',
-    record.bone_mass?.toFixed(1) || '-',
-    record.body_water_percent?.toFixed(1) || '-',
-    record.visceral_fat?.toFixed(1) || '-',
+    !isNaN(Number(record.weight_kg)) ? Number(record.weight_kg).toFixed(1) : '-',
+    !isNaN(Number(record.body_fat_percent)) ? Number(record.body_fat_percent).toFixed(1) : '-',
+    !isNaN(Number(record.body_fat_kg)) ? Number(record.body_fat_kg).toFixed(1) : '-',
+    !isNaN(Number(record.muscle_mass)) ? Number(record.muscle_mass).toFixed(1) : '-',
+    !isNaN(Number(record.bone_mass)) ? Number(record.bone_mass).toFixed(1) : '-',
+    !isNaN(Number(record.body_water_percent)) ? Number(record.body_water_percent).toFixed(1) : '-',
+    !isNaN(Number(record.visceral_fat)) ? Number(record.visceral_fat).toFixed(1) : '-',
     record.kcal || '-',
     record.body_age || '-',
     record.physical_rating || '-'
@@ -748,13 +748,13 @@ const exportAsPDF = (records) => {
             <tr>
               <td>${record.measurement_date}</td>
               <td>${record.measurement_time || '-'}</td>
-              <td>${record.weight_kg?.toFixed(1) || '-'}</td>
-              <td>${record.body_fat_percent?.toFixed(1) || '-'}</td>
-              <td>${record.body_fat_kg?.toFixed(1) || '-'}</td>
-              <td>${record.muscle_mass?.toFixed(1) || '-'}</td>
-              <td>${record.bone_mass?.toFixed(1) || '-'}</td>
-              <td>${record.body_water_percent?.toFixed(1) || '-'}</td>
-              <td>${record.visceral_fat?.toFixed(1) || '-'}</td>
+              <td>${!isNaN(Number(record.weight_kg)) ? Number(record.weight_kg).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.body_fat_percent)) ? Number(record.body_fat_percent).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.body_fat_kg)) ? Number(record.body_fat_kg).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.muscle_mass)) ? Number(record.muscle_mass).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.bone_mass)) ? Number(record.bone_mass).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.body_water_percent)) ? Number(record.body_water_percent).toFixed(1) : '-'}</td>
+              <td>${!isNaN(Number(record.visceral_fat)) ? Number(record.visceral_fat).toFixed(1) : '-'}</td>
               <td>${record.kcal || '-'}</td>
               <td>${record.body_age || '-'}</td>
               <td>${record.physical_rating || '-'}</td>

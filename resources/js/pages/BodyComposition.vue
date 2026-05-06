@@ -257,13 +257,13 @@
             <tr v-for="measurement in paginatedMeasurements" :key="measurement.id" class="border-b border-gray-100 hover:bg-gray-50">
               <td class="px-4 py-3 text-sm text-gray-900">{{ formatDate(measurement.measurement_date) }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.measurement_time || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.weight_kg)?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_fat_percent?.toFixed(1) || '-' }}%</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.body_fat_kg)?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.muscle_mass)?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ unitStore.convertWeight(measurement.bone_mass)?.toFixed(1) || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_water_percent?.toFixed(1) || '-' }}%</td>
-              <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.visceral_fat?.toFixed(1) || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(unitStore.convertWeight(measurement.weight_kg))) ? Number(unitStore.convertWeight(measurement.weight_kg)).toFixed(1) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(measurement.body_fat_percent)) ? Number(measurement.body_fat_percent).toFixed(1) : '-' }}%</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(unitStore.convertWeight(measurement.body_fat_kg))) ? Number(unitStore.convertWeight(measurement.body_fat_kg)).toFixed(1) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(unitStore.convertWeight(measurement.muscle_mass))) ? Number(unitStore.convertWeight(measurement.muscle_mass)).toFixed(1) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(unitStore.convertWeight(measurement.bone_mass))) ? Number(unitStore.convertWeight(measurement.bone_mass)).toFixed(1) : '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(measurement.body_water_percent)) ? Number(measurement.body_water_percent).toFixed(1) : '-' }}%</td>
+              <td class="px-4 py-3 text-sm text-gray-900">{{ !isNaN(Number(measurement.visceral_fat)) ? Number(measurement.visceral_fat).toFixed(1) : '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.kcal || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ measurement.body_age || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ getRatingLabel(measurement.physical_rating) || '-' }}</td>

@@ -367,7 +367,8 @@ async function saveGoal() {
 function goalHintText(goal) {
   if (goal.progress !== null && goal.progress >= 100) return 'Already achieved!'
   if (goal.current_value === null || goal.current_value === undefined) return 'Log a measurement to track progress'
-  const gap = Math.abs(Number(goal.current_value) - Number(goal.target_value)).toFixed(1)
+  const gapVal = Math.abs(Number(goal.current_value) - Number(goal.target_value))
+  const gap = !isNaN(gapVal) ? gapVal.toFixed(1) : '-'
   return `${gap}${goal.metric_unit ? ' ' + goal.metric_unit : ''} to go`
 }
 
@@ -379,7 +380,7 @@ const recentActivity = computed(() => {
       iconPath:    '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>',
       title:       'Measurement Recorded',
       description: r.weight_kg
-        ? `Weight: ${unitStore.convertWeight(r.weight_kg).toFixed(1)} ${unitStore.weightLabel}${r.body_fat_percent != null ? ` · Body fat: ${r.body_fat_percent.toFixed(1)}%` : ''}${r.muscle_mass != null ? ` · Muscle: ${unitStore.convertWeight(r.muscle_mass).toFixed(1)} ${unitStore.weightLabel}` : ''}`
+        ? `Weight: ${!isNaN(Number(unitStore.convertWeight(r.weight_kg))) ? Number(unitStore.convertWeight(r.weight_kg)).toFixed(1) : '-'} ${unitStore.weightLabel}${r.body_fat_percent != null ? ` · Body fat: ${!isNaN(Number(r.body_fat_percent)) ? Number(r.body_fat_percent).toFixed(1) : '-'}%` : ''}${r.muscle_mass != null ? ` · Muscle: ${!isNaN(Number(unitStore.convertWeight(r.muscle_mass))) ? Number(unitStore.convertWeight(r.muscle_mass)).toFixed(1) : '-'} ${unitStore.weightLabel}` : ''}`
         : 'Body composition logged',
       time: formatRelativeTime(r.measurement_date || r.created_at),
       timestamp:    parseLocalDate(r.measurement_date || r.created_at),

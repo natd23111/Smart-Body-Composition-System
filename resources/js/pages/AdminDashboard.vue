@@ -197,7 +197,8 @@ const stats = ref({
 
 const activityRate = computed(() => {
   if (!stats.value.totalUsers) return '0.0'
-  return ((stats.value.activeUsers / stats.value.totalUsers) * 100).toFixed(1)
+  const rate = (stats.value.activeUsers / stats.value.totalUsers) * 100
+  return !isNaN(rate) ? rate.toFixed(1) : '0.0'
 })
 
 const userGrowthChartData = ref({
