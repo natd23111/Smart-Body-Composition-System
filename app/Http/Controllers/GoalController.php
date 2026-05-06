@@ -33,7 +33,14 @@ class GoalController extends Controller
         $user = $request->user();
 
         $goals = Goal::where('user_id', $user->id)
-            ->orderByRaw("FIELD(status, 'active', 'achieved', 'abandoned')")
+            ->orderByRaw("
+                CASE status
+                    WHEN 'active' THEN 1
+                    WHEN 'achieved' THEN 2
+                    WHEN 'abandoned' THEN 3
+                    ELSE 4
+                END
+            ")
             ->orderBy('created_at', 'desc')
             ->get();
 
