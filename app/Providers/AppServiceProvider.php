@@ -32,37 +32,50 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $smtp = SystemSetting::getDecoded('smtp_settings', []);
-
-            if (!is_array($smtp) || empty($smtp['host'])) {
-                return;
-            }
-
-            $username = $smtp['username'] ?? null;
-            $password = $smtp['password'] ?? null;
-
-            if (!empty($password)) {
-                try {
-                    $password = Crypt::decryptString($password);
-                } catch (\Throwable) {
-                    $password = null;
+            $mailer = SystemSetting::get('mailer', 'smtp');
+            if ($mailer === 'postmark') {
+                $postmark = SystemSetting::getDecoded('postmark_settings', []);
+                config([
+                    'mail.default' => 'postmark',
+                    'services.postmark.token' => $postmark['token'] ?? config('services.postmark.token'),
+                    'mail.from.address' => $postmark['from'] ?? config('mail.from.address'),
+                    'mail.from.name' => $postmark['from_name'] ?? config('mail.from.name'),
+                ]);
+                if (!empty($postmark['stream_id'])) {
+                    config(['mail.mailers.postmark.message_stream_id' => $postmark['stream_id']]);
                 }
-            }
+            } else {
+                $smtp = SystemSetting::getDecoded('smtp_settings', []);
+                if (!is_array($smtp) || empty($smtp['host'])) {
+                    return;
+                }
 
-            config([
-                'mail.default' => 'smtp',
-                'mail.mailers.smtp.host' => $smtp['host'],
-                'mail.mailers.smtp.port' => (int) ($smtp['port'] ?? 587),
-                'mail.mailers.smtp.username' => $username,
-                'mail.mailers.smtp.password' => $password,
-                'mail.mailers.smtp.scheme' => match ($smtp['encryption'] ?? 'tls') {
-                    'ssl' => 'smtps',
-                    'none' => null,
-                    default => 'smtp',
-                },
-                'mail.from.address' => $smtp['from'] ?? config('mail.from.address'),
-                'mail.from.name' => $smtp['from_name'] ?? config('mail.from.name'),
-            ]);
+                $username = $smtp['username'] ?? null;
+                $password = $smtp['password'] ?? null;
+
+                if (!empty($password)) {
+                    try {
+                        $password = Crypt::decryptString($password);
+                    } catch (\Throwable) {
+                        $password = null;
+                    }
+                }
+
+                config([
+                    'mail.default' => 'smtp',
+                    'mail.mailers.smtp.host' => $smtp['host'],
+                    'mail.mailers.smtp.port' => (int) ($smtp['port'] ?? 587),
+                    'mail.mailers.smtp.username' => $username,
+                    'mail.mailers.smtp.password' => $password,
+                    'mail.mailers.smtp.scheme' => match ($smtp['encryption'] ?? 'tls') {
+                        'ssl' => 'smtps',
+                        'none' => null,
+                        default => 'smtp',
+                    },
+                    'mail.from.address' => $smtp['from'] ?? config('mail.from.address'),
+                    'mail.from.name' => $smtp['from_name'] ?? config('mail.from.name'),
+                ]);
+            }
         } catch (\Throwable) {
             // Ignore DB-based mail config errors and fall back to environment config.
         }

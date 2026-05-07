@@ -14,7 +14,8 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    // Set default mailer to Postmark for production, fallback to log for local/testing
+    'default' => env('MAIL_MAILER', 'postmark'),
 
     /*
     |--------------------------------------------------------------------------
@@ -55,7 +56,9 @@ return [
 
         'postmark' => [
             'transport' => 'postmark',
+            // Optionally set a message stream ID if using Postmark streams
             // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
+            // You can also set client options if needed
             // 'client' => [
             //     'timeout' => 5,
             // ],
@@ -113,6 +116,19 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Postmark API Token
+    |--------------------------------------------------------------------------
+    |
+    | Set your Postmark server token in your .env as POSTMARK_TOKEN=...
+    | Laravel will use this for API-based sending.
+    |
+    */
+    'postmark' => [
+        'token' => env('POSTMARK_TOKEN'),
     ],
 
 ];

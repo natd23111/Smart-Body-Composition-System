@@ -207,6 +207,7 @@ class AdminController extends Controller
                 'emailOnInactivity' => false,
                 'weeklyDigest' => false,
             ],
+            'mailer' => config('mail.default', 'smtp'),
             'smtp' => [
                 'host' => config('mail.mailers.smtp.host'),
                 'port' => config('mail.mailers.smtp.port', 587),
@@ -220,12 +221,20 @@ class AdminController extends Controller
                     default => 'tls',
                 },
             ],
+            'postmark' => [
+                'token' => config('services.postmark.token'),
+                'from' => config('mail.from.address'),
+                'from_name' => config('mail.from.name', config('app.name')),
+                'stream_id' => env('POSTMARK_MESSAGE_STREAM_ID', ''),
+            ],
             'sessionTimeout' => $securityDefaults['sessionTimeout'],
             'maxLoginAttempts' => $securityDefaults['maxLoginAttempts'],
             'maintenanceMode' => $securityDefaults['maintenanceMode'],
         ];
 
+        $mailer = SystemSetting::get('mailer', $defaults['mailer']);
         $smtp = SystemSetting::getDecoded('smtp_settings', $defaults['smtp']);
+        $postmark = SystemSetting::getDecoded('postmark_settings', $defaults['postmark']);
         $notificationSettings = SystemSetting::getDecoded('admin_notification_settings', $defaults['notifications']);
         $securitySettings = AdminSecuritySettings::all();
 
@@ -239,7 +248,9 @@ class AdminController extends Controller
 
         return response()->json([
             'notifications' => array_merge($defaults['notifications'], is_array($notificationSettings) ? $notificationSettings : []),
+            'mailer' => $mailer,
             'smtp' => array_merge($defaults['smtp'], is_array($smtp) ? $smtp : []),
+            'postmark' => array_merge($defaults['postmark'], is_array($postmark) ? $postmark : []),
             'sessionTimeout' => $securitySettings['sessionTimeout'] ?? $defaults['sessionTimeout'],
             'maxLoginAttempts' => $securitySettings['maxLoginAttempts'] ?? $defaults['maxLoginAttempts'],
             'maintenanceMode' => (bool) ($securitySettings['maintenanceMode'] ?? $defaults['maintenanceMode']),
@@ -254,6 +265,7 @@ class AdminController extends Controller
             'notifications.emailOnGoalAchieved' => 'required|boolean',
             'notifications.emailOnInactivity' => 'required|boolean',
             'notifications.weeklyDigest' => 'required|boolean',
+            'mailer' => 'required|in:smtp,postmark',
             'smtp' => 'required|array',
             'smtp.host' => 'nullable|string|max:255',
             'smtp.port' => 'nullable|integer|min:1|max:65535',
@@ -262,6 +274,11 @@ class AdminController extends Controller
             'smtp.from' => 'nullable|email',
             'smtp.from_name' => 'nullable|string|max:255',
             'smtp.encryption' => 'required|in:tls,ssl,none',
+            'postmark' => 'required|array',
+            'postmark.token' => 'nullable|string|max:255',
+            'postmark.from' => 'nullable|email',
+            'postmark.from_name' => 'nullable|string|max:255',
+            'postmark.stream_id' => 'nullable|string|max:255',
             'sessionTimeout' => 'required|integer|min:5|max:1440',
             'maxLoginAttempts' => 'required|integer|min:3|max:20',
             'maintenanceMode' => 'required|boolean',
@@ -269,8 +286,11 @@ class AdminController extends Controller
 
         $smtp = $validated['smtp'];
         $smtp['password'] = !empty($smtp['password']) ? Crypt::encryptString($smtp['password']) : '';
+        $postmark = $validated['postmark'];
 
+        SystemSetting::put('mailer', $validated['mailer']);
         SystemSetting::putEncoded('smtp_settings', $smtp);
+        SystemSetting::putEncoded('postmark_settings', $postmark);
         SystemSetting::putEncoded('admin_notification_settings', $validated['notifications']);
         SystemSetting::putEncoded('admin_security_settings', [
             'sessionTimeout' => $validated['sessionTimeout'],

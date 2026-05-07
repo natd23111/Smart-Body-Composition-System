@@ -32,10 +32,17 @@
     </div>
 
 
-    <!-- Email Configuration -->
+    <!-- Email Configuration (SMTP or Postmark) -->
     <section class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-      <h2 class="text-lg font-semibold text-gray-900">Email Configuration (SMTP)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <h2 class="text-lg font-semibold text-gray-900">Email Configuration</h2>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Mailer Type</label>
+        <select v-model="form.mailer" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+          <option value="smtp">SMTP</option>
+          <option value="postmark">Postmark</option>
+        </select>
+      </div>
+      <div v-if="form.mailer === 'smtp'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
           <input v-model="form.smtp.host" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="smtp.mailtrap.io" />
@@ -69,11 +76,29 @@
           </select>
         </div>
       </div>
+      <div v-else-if="form.mailer === 'postmark'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Postmark Server Token</label>
+          <input v-model="form.postmark.token" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="POSTMARK_TOKEN" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Address</label>
+          <input v-model="form.postmark.from" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="noreply@smartbody.app" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+          <input v-model="form.postmark.from_name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Smart Body Composition" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Message Stream ID (optional)</label>
+          <input v-model="form.postmark.stream_id" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="broadcast/transactional" />
+        </div>
+      </div>
       <div class="border-t border-gray-100 pt-4 flex flex-col md:flex-row md:items-end gap-4">
         <div class="flex-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Test Recipient</label>
           <input v-model="testEmailRecipient" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Leave blank to send to your admin email" />
-          <p class="text-xs text-gray-500 mt-1">Use this after saving SMTP settings to confirm delivery.</p>
+          <p class="text-xs text-gray-500 mt-1">Use this after saving settings to confirm delivery.</p>
         </div>
         <button
           @click="sendTestEmail"
@@ -141,6 +166,7 @@ const defaults = {
     emailOnInactivity: false,
     weeklyDigest: false,
   },
+  mailer: 'smtp',
   smtp: {
     host: 'smtp.mailtrap.io',
     port: 587,
@@ -149,6 +175,12 @@ const defaults = {
     from: 'noreply@smartbody.app',
     from_name: 'Smart Body Composition',
     encryption: 'tls',
+  },
+  postmark: {
+    token: '',
+    from: 'noreply@smartbody.app',
+    from_name: 'Smart Body Composition',
+    stream_id: '',
   },
   sessionTimeout: 120,
   maxLoginAttempts: 5,
@@ -188,7 +220,9 @@ async function loadSettings() {
     const response = await adminService.getSettings()
     const data = response.data
     defaults.notifications = { ...defaults.notifications, ...(data.notifications ?? {}) }
+    defaults.mailer = data.mailer ?? defaults.mailer
     defaults.smtp = { ...defaults.smtp, ...(data.smtp ?? {}) }
+    defaults.postmark = { ...defaults.postmark, ...(data.postmark ?? {}) }
     defaults.sessionTimeout = data.sessionTimeout ?? defaults.sessionTimeout
     defaults.maxLoginAttempts = data.maxLoginAttempts ?? defaults.maxLoginAttempts
     defaults.maintenanceMode = data.maintenanceMode ?? defaults.maintenanceMode
@@ -208,7 +242,9 @@ async function persistSettings() {
     const response = await adminService.updateSettings(form.value)
     const data = response.data.data
     defaults.notifications = { ...defaults.notifications, ...(data.notifications ?? {}) }
+    defaults.mailer = data.mailer ?? defaults.mailer
     defaults.smtp = { ...defaults.smtp, ...(data.smtp ?? {}) }
+    defaults.postmark = { ...defaults.postmark, ...(data.postmark ?? {}) }
     defaults.sessionTimeout = data.sessionTimeout ?? defaults.sessionTimeout
     defaults.maxLoginAttempts = data.maxLoginAttempts ?? defaults.maxLoginAttempts
     defaults.maintenanceMode = data.maintenanceMode ?? defaults.maintenanceMode
