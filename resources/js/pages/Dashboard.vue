@@ -570,12 +570,23 @@ const formatChartLabel = (dateString) => {
   })
 }
 
+const toChartNumber = (value) => {
+  const numericValue = Number(value)
+
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
 const buildMetricChart = (key, convert = (v) => v) => {
-  const chartRecords = data.value.filter(record => typeof record[key] === 'number' && !Number.isNaN(record[key]))
+  const chartRecords = data.value
+    .map(record => ({
+      ...record,
+      chartValue: toChartNumber(record[key]),
+    }))
+    .filter(record => record.chartValue !== null)
 
   return {
     labels: chartRecords.map(record => formatChartLabel(record.measurement_date)),
-    values: chartRecords.map(record => Number(convert(record[key]).toFixed(1))),
+    values: chartRecords.map(record => Number(convert(record.chartValue).toFixed(1))),
   }
 }
 

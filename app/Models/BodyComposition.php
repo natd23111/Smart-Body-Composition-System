@@ -25,6 +25,20 @@ class BodyComposition extends Model
         'visceral_fat'
     ];
 
+    protected $casts = [
+        'measurement_date' => 'date:Y-m-d',
+        'weight_kg' => 'float',
+        'body_fat_percent' => 'float',
+        'body_fat_kg' => 'float',
+        'body_water_percent' => 'float',
+        'muscle_mass' => 'float',
+        'bone_mass' => 'float',
+        'visceral_fat' => 'float',
+        'physical_rating' => 'integer',
+        'kcal' => 'integer',
+        'body_age' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
