@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RecommendationScenarioSeeder::class,
             UserSeeder::class,
             RecommendationTemplateSeeder::class,
+            SiswaSeeder::class,
         ]);
     }
 }
