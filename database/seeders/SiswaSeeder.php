@@ -172,6 +172,20 @@ class SiswaSeeder extends Seeder
 				'body_age' => 18,
 				'visceral_fat' => 1.0,
 			],
+            			[
+				'measurement_date' => '2026-05-07',
+				'measurement_time' => '08:10',
+				'weight_kg' => 53.9,
+				'body_fat_percent' => 9.4,
+				'body_fat_kg' => 5.0,
+				'body_water_percent' => 60.6,
+				'muscle_mass' => 46.4,
+				'physical_rating' => 7,
+				'bone_mass' => 2.6,
+				'kcal' => 1450,
+				'body_age' => 18,
+				'visceral_fat' => 2.0,
+			],
 		];
 
 		foreach ($measurements as $measurement) {
