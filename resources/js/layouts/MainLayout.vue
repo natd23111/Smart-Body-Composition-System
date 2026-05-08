@@ -26,8 +26,8 @@
               :class="[
                 'px-4 py-4 font-medium text-sm transition-colors duration-200 whitespace-nowrap flex items-center gap-2 text-gray-600 hover:text-gray-900',
                 isActiveTab(tab.path)
-                  ? 'border-green-600'
-                  : 'border-transparent hover:border-gray-300'
+                  ? 'text-green-600 border-b-2 border-green-600'
+                  : 'border-b-2 border-transparent hover:border-gray-300'
               ]"
             >
               <svg v-if="tab.icon" :class="`${tab.iconClass || 'h-4 w-4'} text-gray-500`" xmlns="http://www.w3.org/2000/svg" :viewBox="tab.iconViewBox || '0 0 24 24'" :fill="tab.iconFill || 'none'" :stroke="tab.iconStroke || 'currentColor'" :stroke-width="tab.iconStrokeWidth || '2'" stroke-linecap="round" stroke-linejoin="round" v-html="tab.icon"></svg>
@@ -50,8 +50,8 @@
               :class="[
                 'px-4 py-4 font-medium text-sm transition-colors duration-200 whitespace-nowrap flex items-center gap-2 text-gray-600 hover:text-gray-900',
                 isActiveTab(tab.path)
-                  ? 'text-orange-600 font-semibold'
-                  : 'hover:text-gray-700'
+                  ? 'text-orange-600 font-semibold border-b-2 border-orange-600'
+                  : 'border-b-2 border-transparent hover:text-gray-700'
               ]"
             >
               <svg v-if="tab.icon" :class="`${tab.iconClass || 'h-4 w-4'} text-gray-500`" xmlns="http://www.w3.org/2000/svg" :viewBox="tab.iconViewBox || '0 0 24 24'" :fill="tab.iconFill || 'none'" :stroke="tab.iconStroke || 'currentColor'" :stroke-width="tab.iconStrokeWidth || '2'" stroke-linecap="round" stroke-linejoin="round" v-html="tab.icon"></svg>
@@ -99,13 +99,49 @@
           </div>
 
           <!-- Mobile Menu Button -->
-          <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <svg class="h-6 w-6 text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <svg v-if="!isMobileMenuOpen" class="h-6 w-6 text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="4" y1="6" x2="20" y2="6"></line>
               <line x1="4" y1="12" x2="20" y2="12"></line>
               <line x1="4" y1="18" x2="20" y2="18"></line>
             </svg>
+            <svg v-else class="h-6 w-6 text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation Menu -->
+      <div v-if="isMobileMenuOpen" class="md:hidden bg-white border-t border-gray-100">
+        <div class="px-4 pt-2 pb-6 space-y-1">
+          <router-link
+            v-for="tab in regularUserTabs"
+            :key="tab.name"
+            :to="tab.path"
+            @click="isMobileMenuOpen = false"
+            class="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors"
+            :class="[isActiveTab(tab.path) ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50']"
+          >
+            <svg class="h-5 w-5 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="tab.icon"></svg>
+            {{ tab.label }}
+          </router-link>
+
+          <template v-if="isAdmin">
+            <div class="border-t border-gray-100 my-2 pt-2 text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Admin Panel</div>
+            <router-link
+              v-for="tab in adminTabs"
+              :key="tab.name"
+              :to="tab.path"
+              @click="isMobileMenuOpen = false"
+              class="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors"
+              :class="[isActiveTab(tab.path) ? 'bg-orange-50 text-orange-700' : 'text-gray-600 hover:bg-gray-50']"
+            >
+              <svg class="h-5 w-5 opacity-70" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="tab.icon"></svg>
+              {{ tab.label }}
+            </router-link>
+          </template>
         </div>
       </div>
     </nav>
@@ -129,6 +165,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const logoutLoading = ref(false)
+const isMobileMenuOpen = ref(false)
 const unreadCount = ref(0)
 
 // Get user info
@@ -184,11 +221,18 @@ onBeforeUnmount(() => {
 watch(() => route.fullPath, () => {
   refreshUserProfile()
   refreshActivityCount()
+  isMobileMenuOpen.value = false
+})
+
+// Watcher for debugging the mobile menu
+watch(isMobileMenuOpen, (newValue) => {
+  console.log('isMobileMenuOpen changed to:', newValue)
 })
 
 // Check if user is admin
 const isAdmin = computed(() => {
-  return authStore.user?.value?.role === 'admin'
+  const user = authStore.user?.value || authStore.user
+  return user?.role === 'admin'
 })
 
 // Regular user tabs
@@ -268,9 +312,9 @@ const adminTabs = [
 // Scroll to top when logo is clicked
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
-// Check if a tab is active
+// Check if a tab is active (exact match or starts with path for sub-routes)
 const isActiveTab = (path) => {
-  return route.path === path || route.path.startsWith(path.split('/').slice(0, -1).join('/'))
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 // Handle logout with loading state and error handling
