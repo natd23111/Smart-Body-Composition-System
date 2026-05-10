@@ -286,50 +286,68 @@
         </div>
         <div class="px-6 py-4 space-y-3">
 
-          <!-- Email Alerts -->
-          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
+          <!-- Master Notification Toggle -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200 shadow-sm mb-2">
             <div>
-              <p class="font-medium text-sm text-gray-900">Email Alerts</p>
-              <p class="text-xs text-gray-600">Receive important updates via email</p>
+              <p class="font-bold text-sm text-blue-900">Allow Notifications</p>
             </div>
             <label class="flex items-center cursor-pointer">
               <input
-                v-model="systemPrefs.emailAlerts"
+                v-model="systemPrefs.notifications"
                 type="checkbox"
-                class="w-4 h-4"
+                class="w-5 h-5 accent-blue-600"
               />
             </label>
           </div>
 
-          <!-- Weekly Report -->
-          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
-            <div>
-              <p class="font-medium text-sm text-gray-900">Weekly Reports</p>
-              <p class="text-xs text-gray-600">Get weekly health summary reports</p>
-            </div>
-            <label class="flex items-center cursor-pointer">
-              <input
-                v-model="systemPrefs.weeklyReport"
-                type="checkbox"
-                class="w-4 h-4"
-              />
-            </label>
-          </div>
+          <Transition name="fade">
+            <div v-show="systemPrefs.notifications" class="space-y-3 pt-2 border-t border-blue-100">
+              <!-- Email Alerts -->
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
+                <div>
+                  <p class="font-medium text-sm text-gray-900">Email Alerts</p>
+                  <p class="text-xs text-gray-600">Receive important updates via email</p>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    v-model="systemPrefs.emailAlerts"
+                    type="checkbox"
+                    class="w-4 h-4"
+                  />
+                </label>
+              </div>
 
-          <!-- Goal Reminders -->
-          <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
-            <div>
-              <p class="font-medium text-sm text-gray-900">Goal Reminders</p>
-              <p class="text-xs text-gray-600">Receive reminders to log measurements</p>
+              <!-- Weekly Report -->
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
+                <div>
+                  <p class="font-medium text-sm text-gray-900">Weekly Reports</p>
+                  <p class="text-xs text-gray-600">Get weekly health summary reports</p>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    v-model="systemPrefs.weeklyReport"
+                    type="checkbox"
+                    class="w-4 h-4"
+                  />
+                </label>
+              </div>
+
+              <!-- Goal Reminders -->
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-100">
+                <div>
+                  <p class="font-medium text-sm text-gray-900">Measurement Reminders</p>
+                  <p class="text-xs text-gray-600">Receive reminders to log measurements if you're inactive</p>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    v-model="systemPrefs.goalReminders"
+                    type="checkbox"
+                    class="w-4 h-4"
+                  />
+                </label>
+              </div>
             </div>
-            <label class="flex items-center cursor-pointer">
-              <input
-                v-model="systemPrefs.goalReminders"
-                type="checkbox"
-                class="w-4 h-4"
-              />
-            </label>
-          </div>
+          </Transition>
         </div>
       </div>
 
@@ -572,7 +590,11 @@ const savePersonalInfo = async () => {
     })
 
     // Update auth store and localStorage with full user object
-    authStore.user = updated
+    if (authStore.user && typeof authStore.user === 'object' && 'value' in authStore.user) {
+      authStore.user.value = updated
+    } else {
+      authStore.user = updated
+    }
     localStorage.setItem('user', JSON.stringify(updated))
 
     successMessage.value = 'Profile updated successfully!'

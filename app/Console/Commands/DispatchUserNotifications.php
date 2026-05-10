@@ -27,6 +27,7 @@ class DispatchUserNotifications extends Command
 
         $users = User::query()
             ->where('account_status', 'Active')
+            ->where('notifications_enabled', true)
             ->get();
 
         $weeklyReportsSent = 0;
@@ -38,7 +39,7 @@ class DispatchUserNotifications extends Command
                 ->orderByDesc('created_at')
                 ->first();
 
-            if ($forceWeekly || $now->isMonday()) {
+            if (($forceWeekly || $now->isMonday()) && $user->weekly_reports_enabled) {
                 $analysis = $this->recommendationEngine->buildTrendAnalysis($user, 7);
 
                 if (($analysis['meta']['has_data'] ?? false) && !empty($analysis['meta']['summary'])) {
@@ -48,7 +49,7 @@ class DispatchUserNotifications extends Command
                 }
             }
 
-            if (!$latestMeasurement) {
+            if (!$latestMeasurement && $user->measurement_reminders_enabled) {
                 $this->notificationService->notifyMeasurementReminder(
                     $user,
                     'Add your first entry to start seeing trends and recommendations.',
@@ -61,7 +62,7 @@ class DispatchUserNotifications extends Command
             $lastMeasurementAt = optional($latestMeasurement->measurement_date)->copy()?->startOfDay()
                 ?? $latestMeasurement->created_at->copy()->startOfDay();
 
-            if ($lastMeasurementAt->diffInDays($now->copy()->startOfDay()) >= 7) {
+            if ($user->measurement_reminders_enabled && $lastMeasurementAt->diffInDays($now->copy()->startOfDay()) >= 7) {
                 $this->notificationService->notifyMeasurementReminder(
                     $user,
                     'It has been at least a week since your last measurement. Log a new one to keep your trends and recommendations up to date.',
