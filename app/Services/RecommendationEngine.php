@@ -119,7 +119,7 @@ class RecommendationEngine
             'normal_range' => [
                 'min'     => $minDisplay,
                 'max'     => $ranges['body_fat_healthy_max'],
-                'context' => "Personalised for {$profile['gender']}, age {$profile['age']}. Activity level '{$profile['activity_level']}' is inferred from your physical rating history.",
+                'context' => "Personalised for {$profile['gender']}, age {$profile['age']}.",
             ],
             'observation'  => $this->buildTrendObservation('Body Fat Percentage', $before, $after, $absChange, '%'),
             'rule_applied' => "Classification: {$classification}\n"
@@ -239,13 +239,13 @@ class RecommendationEngine
             'normal_range' => [
                 'min'     => $minimum,
                 'max'     => 65,
-                'context' => "Personalised minimum of {$minimum}% based on gender and activity level ({$profile['activity_level']})",
+                'context' => "Personalised minimum of {$minimum}% based on gender and age.",
             ],
             'observation'  => $this->buildTrendObservation('Body Water', $before, $after, $absChange, '%'),
             'rule_applied' => "Minimum body water threshold = {$minimum}% (base for gender + activity adjustment)\n"
                             . "IF current value < {$minimum}% → moderate severity\n"
                             . "IF current value < " . ($minimum - 5) . "% → high severity\n"
-                            . "Threshold from config/recommendations.php → body_water_percent.{$profile['gender_key']} + activity_adjustment.{$profile['activity_level']}",
+                            . "Threshold from config/recommendations.php → body_water_percent.{$profile['gender_key']}}",
             'conclusion'      => $conclusion,
             'recommendations' => [
                 ['icon' => '💧', 'title' => 'Increase Daily Fluid Intake', 'description' => 'Aim for 2–2.5 litres of water per day and more during exercise'],
@@ -870,7 +870,6 @@ class RecommendationEngine
                 ],
                 'metric_basis' => [
                     $this->metricBasis('Visceral fat', $visceralFat !== null ? (string) $visceralFat : 'N/A', 'A visceral fat reading of ' . $ranges['visceral_fat_elevated_min'] . ' or above is considered elevated. Visceral fat surrounds your organs and is linked to cardiovascular and metabolic health risks.'),
-                    $this->metricBasis('Activity level', ucfirst($profile['activity_level']), 'Your current activity level is relatively low. Adding regular cardio can help burn visceral fat more effectively.'),
                 ],
                 'priority' => $visceralFat !== null && $visceralFat >= $ranges['visceral_fat_high_min'] ? 'high' : 'medium',
                 'confidence' => 'medium',
@@ -946,7 +945,6 @@ class RecommendationEngine
                 ],
                 'metric_basis' => [
                     $this->metricBasis('Physical rating', (string) $physicalRating, 'A rating of ' . config('recommendations.activity_levels.physical_rating_breakpoints.low_max', 3) . ' or below indicates a low current fitness level. The scale typically runs from 1 (very low) to 9 (athletic), so there is room to improve with consistent effort.'),
-                    $this->metricBasis('Activity level', ucfirst($profile['activity_level']), 'Your activity level is estimated from your physical rating history. Building a regular exercise habit is the most effective way to raise this over time.'),
                 ],
                 'priority' => 'high',
                 'confidence' => 'high',
@@ -1030,7 +1028,7 @@ class RecommendationEngine
                     'Use gradual habit adjustments instead of chasing short-term fluctuations.',
                 ],
                 'metric_basis' => [
-                    $this->metricBasis('Profile context', ucfirst($profile['activity_level']) . ' activity', 'Personalized ranges were applied using available gender, age, and inferred activity level data.'),
+                    $this->metricBasis('Profile context', "{$profile['gender']}, Age {$profile['age']}", 'Personalized ranges were applied using available gender and age data.'),
                 ],
                 'priority' => 'low',
                 'confidence' => 'medium',
@@ -1051,39 +1049,15 @@ class RecommendationEngine
             'gender' => $user->gender ?: 'Unspecified',
             'gender_key' => $this->normalizeGender($user->gender),
             'age' => $user->age,
-            'activity_level' => $this->resolveActivityLevel($user),
             'height_cm' => $user->height_cm,
         ];
-    }
-
-    private function resolveActivityLevel(User $user): string
-    {
-        $avgPhysicalRating = $user->bodyCompositions()
-            ->orderByDesc('measurement_date')
-            ->orderByDesc('created_at')
-            ->limit(config('recommendations.history.activity_lookback_records', 5))
-            ->pluck('physical_rating')
-            ->filter(fn ($value) => $value !== null)
-            ->avg();
-
-        if ($avgPhysicalRating === null) {
-            return config('recommendations.activity_levels.default', 'moderate');
-        }
-
-        $breakpoints = config('recommendations.activity_levels.physical_rating_breakpoints');
-
-        return match (true) {
-            $avgPhysicalRating <= $breakpoints['low_max'] => 'low',
-            $avgPhysicalRating <= $breakpoints['moderate_max'] => 'moderate',
-            default => 'high',
-        };
     }
 
     private function resolveReferenceRanges(array $profile): array
     {
         $bodyFatBand = $this->bodyFatBand($profile['gender_key'], $profile['age']);
         $muscleRatioMinimum = $this->muscleRatioMinimum($profile['gender_key'], $profile['age']);
-        $bodyWaterMinimum = $this->bodyWaterMinimum($profile['gender_key'], $profile['activity_level']);
+        $bodyWaterMinimum = $this->bodyWaterMinimum($profile['gender_key']);
         $visceralFat = config('recommendations.visceral_fat');
 
         return [
@@ -1111,11 +1085,10 @@ class RecommendationEngine
         return end($bands);
     }
 
-    private function bodyWaterMinimum(string $genderKey, string $activityLevel): float
+    private function bodyWaterMinimum(string $genderKey): float
     {
-        $type = ($activityLevel === 'high') ? 'athletic' : 'standard';
-        $config = config("recommendations.body_water_percent.{$genderKey}.{$type}")
-               ?? config("recommendations.body_water_percent.male.{$type}");
+        $config = config("recommendations.body_water_percent.{$genderKey}.standard")
+               ?? config("recommendations.body_water_percent.male.standard");
 
         return (float) $config['minimum'];
     }
@@ -1224,7 +1197,6 @@ class RecommendationEngine
             'visceral_fat' => $measurement->visceral_fat,
             'physical_rating' => $measurement->physical_rating,
             'bmi' => $bmi,
-            'activity_level' => $profile['activity_level'],
         ];
     }
 
