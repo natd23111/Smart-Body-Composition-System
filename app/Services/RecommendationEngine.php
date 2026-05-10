@@ -47,6 +47,8 @@ class RecommendationEngine
             $this->trendInsightMuscleMass($first, $last, $measurements, $profile, $ranges),
             $this->trendInsightBodyWater($first, $last, $measurements, $profile, $ranges),
             $this->trendInsightVisceralFat($first, $last, $measurements, $ranges),
+            $this->trendInsightBoneMass($first, $last, $measurements, $profile),
+            $this->trendInsightPhysicalRating($first, $last, $measurements),
             $this->trendInsightWeight($first, $last, $measurements, $heightM),
         ]);
 
@@ -76,19 +78,22 @@ class RecommendationEngine
         $absChange = round($after - $before, 1);
         $direction = $this->trendDirection($absChange);
 
-        $severity = match (true) {
-            $after >= $ranges['body_fat_high_min']     => 'high',
-            $after >= $ranges['body_fat_elevated_min'] => 'moderate',
-            default                                    => 'low',
-        };
+        $classification = 'Healthy';
+        $severity = 'low';
+
+        if ($after >= $ranges['body_fat_high_min']) {
+            $classification = 'Obese';
+            $severity = 'high';
+        } elseif ($after >= $ranges['body_fat_elevated_min']) {
+            $classification = 'Overweight';
+            $severity = 'moderate';
+        }
 
         $minDisplay = $profile['gender_key'] === 'female' ? 14 : 6;
 
-        $conclusion = match ($direction) {
-            'up'   => "Your body fat percentage has increased by {$absChange}% over this period. This may indicate a caloric surplus or reduced exercise frequency. Review your dietary habits and consider increasing cardiovascular activity.",
-            'down' => 'Your body fat percentage has decreased, which reflects positive progress from your fitness and nutrition efforts. Keep maintaining your current routine.',
-            default => 'Your body fat percentage has remained stable over this period. Consistency in your current habits is keeping you on track.',
-        };
+        $conclusion = ($severity !== 'low')
+            ? "Your current body fat of {$after}% is classified as \"{$classification}\". " . ($direction === 'up' ? "The upward trend suggests a need to review caloric intake." : "While trending {$direction}, it remains above the healthy limit of {$ranges['body_fat_healthy_max']}%.")
+            : "Your body fat is within the healthy range. " . match($direction) { 'up' => 'Monitoring the slight increase is advised.', 'down' => 'Great progress on reduction.', default => 'Maintain your current habits.' };
 
         $recs = $direction === 'up'
             ? [
@@ -110,13 +115,15 @@ class RecommendationEngine
             'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
             'direction'    => $direction,
             'severity'     => $severity,
+            'classification' => $classification,
             'normal_range' => [
                 'min'     => $minDisplay,
                 'max'     => $ranges['body_fat_healthy_max'],
-                'context' => "Personalised for {$profile['gender']}, age {$profile['age']}, {$profile['activity_level']} activity",
+                'context' => "Personalised for {$profile['gender']}, age {$profile['age']}. Activity level '{$profile['activity_level']}' is inferred from your physical rating history.",
             ],
             'observation'  => $this->buildTrendObservation('Body Fat Percentage', $before, $after, $absChange, '%'),
-            'rule_applied' => "IF body fat % >= {$ranges['body_fat_elevated_min']}% (elevated threshold for your profile) → moderate severity\n"
+            'rule_applied' => "Classification: {$classification}\n"
+                            . "IF body fat % >= {$ranges['body_fat_elevated_min']}% (elevated threshold for your profile) → moderate severity\n"
                             . "IF body fat % >= {$ranges['body_fat_high_min']}% (high threshold for your profile) → high severity\n"
                             . "Thresholds sourced from config/recommendations.php → body_fat_percent.{$profile['gender_key']}",
             'conclusion'      => $conclusion,
@@ -308,6 +315,118 @@ class RecommendationEngine
             'data_points'     => $measurements
                 ->filter(fn ($m) => $m->visceral_fat !== null)
                 ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->visceral_fat])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightBoneMass($first, $last, $measurements, array $profile): ?array
+    {
+        if ($first->bone_mass === null || $last->bone_mass === null || $last->weight_kg === null) return null;
+
+        $before    = (float) $first->bone_mass;
+        $after     = (float) $last->bone_mass;
+        $absChange = round($after - $before, 2);
+        $direction = $this->trendDirection($absChange);
+
+        $gender = $profile['gender_key'];
+        $boneBands = config("recommendations.bone_mass.{$gender}", config('recommendations.bone_mass.male'));
+        $threshold = 0;
+        foreach ($boneBands as $band) {
+            if ($last->weight_kg <= $band['max_weight']) {
+                $threshold = (float) $band['healthy_min'];
+                break;
+            }
+        }
+        if (!$threshold) $threshold = (float) end($boneBands)['healthy_min'];
+
+        $severity = $after < $threshold ? 'moderate' : 'low';
+
+        $conclusion = match ($direction) {
+            'up'   => "Your bone mass has slightly increased. This is a positive trend often supported by weight-bearing exercise and adequate mineral intake.",
+            'down' => "Your bone mass has decreased by " . abs($absChange) . " kg. Ensure you are consuming enough calcium and vitamin D, and including resistance training in your routine.",
+            default => 'Your bone mass has remained stable within your normal range.',
+        };
+
+        return [
+            'key'          => 'bone_mass',
+            'label'        => 'Bone Mass',
+            'unit'         => ' kg',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => $threshold,
+                'max'     => round($threshold + 1, 1),
+                'context' => "Healthy minimum of {$threshold} kg for your current weight category",
+            ],
+            'observation'  => $this->buildTrendObservation('Bone Mass', $before, $after, $absChange, ' kg'),
+            'rule_applied' => "Threshold = {$threshold} kg based on weight of {$last->weight_kg} kg\n"
+                            . "IF bone mass < threshold → moderate severity",
+            'conclusion'      => $conclusion,
+            'recommendations' => [
+                ['icon' => '🦴', 'title' => 'Prioritise Micronutrients', 'description' => 'Ensure adequate Calcium and Vitamin D intake'],
+                ['icon' => '🏋️', 'title' => 'Weight-Bearing Exercise', 'description' => 'Resistance training helps maintain and improve bone density'],
+            ],
+            'data_points' => $measurements
+                ->filter(fn ($m) => $m->bone_mass !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->bone_mass])
+                ->values()->all(),
+        ];
+    }
+
+    private function trendInsightPhysicalRating($first, $last, $measurements): ?array
+    {
+        if ($first->physical_rating === null || $last->physical_rating === null) return null;
+
+        $before    = (int) $first->physical_rating;
+        $after     = (int) $last->physical_rating;
+        $absChange = $after - $before;
+        $direction = $this->trendDirection((float) $absChange);
+
+        $breakpoints = config('recommendations.activity_levels.physical_rating_breakpoints');
+        $severity = match (true) {
+            $after <= $breakpoints['low_max']      => 'high',
+            $after <= $breakpoints['moderate_max'] => 'moderate',
+            default                                => 'low',
+        };
+
+        $labels = config('recommendations.physical_rating');
+        $currentLabel = $labels[$after]['label'] ?? 'Unknown';
+
+        return [
+            'key'          => 'physical_rating',
+            'label'        => 'Physical Rating',
+            'unit'         => '',
+            'before'       => $before,
+            'after'        => $after,
+            'abs_change'   => (float) $absChange,
+            'change_percent' => $before > 0 ? round(($absChange / $before) * 100, 1) : 0,
+            'direction'    => $direction,
+            'severity'     => $severity,
+            'normal_range' => [
+                'min'     => $breakpoints['moderate_max'] + 1,
+                'max'     => 9,
+                'context' => "A rating of " . ($breakpoints['moderate_max'] + 1) . " or higher indicates a standard to athletic build",
+            ],
+            'observation'  => "Physical rating " . ($direction === 'stable' ? "remained at {$after}" : ($direction === 'up' ? "improved" : "decreased") . " from {$before} to {$after}"),
+            'rule_applied' => "Current: {$after} ({$currentLabel})\n"
+                            . "IF rating <= {$breakpoints['low_max']} → high severity\n"
+                            . "IF rating <= {$breakpoints['moderate_max']} → moderate severity",
+            'conclusion'      => match ($direction) {
+                'up'   => "Your physical rating has improved to '{$currentLabel}'. This reflects positive changes in your body composition, typically an improved muscle-to-fat ratio.",
+                'down' => "Your physical rating has dropped. This may indicate a loss of muscle mass or an increase in body fat percentage.",
+                default => "Your physical rating remains stable at '{$currentLabel}'.",
+            },
+            'recommendations' => [
+                ['icon' => '📈', 'title' => 'Focus on Body Recomposition', 'description' => 'Aim to increase muscle while managing fat for a higher rating'],
+                ['icon' => '🎯', 'title' => 'Consistency is Key', 'description' => 'Maintain your exercise schedule for long-term improvements'],
+            ],
+            'data_points' => $measurements
+                ->filter(fn ($m) => $m->physical_rating !== null)
+                ->map(fn ($m) => ['date' => $m->measurement_date, 'value' => (float) $m->physical_rating])
                 ->values()->all(),
         ];
     }
@@ -676,6 +795,14 @@ class RecommendationEngine
         $templates = [];
 
         $bodyFat = $measurement->body_fat_percent;
+
+        $bodyFatLabel = 'Healthy';
+        if ($bodyFat >= $ranges['body_fat_high_min']) {
+            $bodyFatLabel = 'Obese';
+        } elseif ($bodyFat >= $ranges['body_fat_elevated_min']) {
+            $bodyFatLabel = 'Overweight';
+        }
+
         $bodyWater = $measurement->body_water_percent;
         $muscleMass = $measurement->muscle_mass;
         $visceralFat = $measurement->visceral_fat;
@@ -711,15 +838,15 @@ class RecommendationEngine
                 'template_id' => 'body-fat-reduction',
                 'template_code' => 'TMPL-NUT-001',
                 'recommendation_type' => 'Nutrition',
-                'title' => 'Rebalance Body Fat Through Sustainable Habits',
-                'summary' => 'Body fat percentage is above the personalized wellness range, so nutrition quality and consistency should be prioritized.',
+                'title' => "Address {$bodyFatLabel} Body Composition",
+                'summary' => "Your body fat percentage is currently in the **{$bodyFatLabel}** range. Prioritizing nutrition quality and consistency is recommended.",
                 'details' => [
                     'Build meals around protein, fiber, and minimally processed foods.',
                     'Use gradual, sustainable calorie control instead of aggressive restriction.',
                     'Track changes across several weeks rather than reacting to a single measurement.',
                 ],
                 'metric_basis' => [
-                    $this->metricBasis('Body fat', $bodyFat . '%', 'Your body fat is above ' . $ranges['body_fat_elevated_min'] . '%, which is the healthy upper limit for your gender and age. Excess body fat, especially over time, can increase health risks.'),
+                    $this->metricBasis('Body fat', $bodyFat . '%', "Your current level is classified as **{$bodyFatLabel}**. The healthy upper limit for your profile is {$ranges['body_fat_healthy_max']}%."),
                     $this->metricBasis('BMI', $bmi !== null ? (string) $bmi : 'N/A', 'Your BMI is shown here for extra context. It helps give a fuller picture alongside your body fat reading.'),
                 ],
                 'priority' => $bodyFat >= $ranges['body_fat_high_min'] ? 'high' : 'medium',
@@ -804,7 +931,7 @@ class RecommendationEngine
         }
 
         // Rule: Low physical rating (fitness foundation)
-        if ($physicalRating !== null && $physicalRating <= config('recommendations.physical_rating.low_max', 3)) {
+        if ($physicalRating !== null && $physicalRating <= config('recommendations.activity_levels.physical_rating_breakpoints.low_max', 3)) {
             $templates[] = [
                 'template_id' => 'fitness-foundation',
                 'template_code' => 'TMPL-FIT-001',
@@ -818,7 +945,7 @@ class RecommendationEngine
                     'Progress gradually by adding 5–10% volume or intensity every two weeks.',
                 ],
                 'metric_basis' => [
-                    $this->metricBasis('Physical rating', (string) $physicalRating, 'A rating of ' . config('recommendations.physical_rating.low_max', 3) . ' or below indicates a low current fitness level. The scale typically runs from 1 (very low) to 9 (athletic), so there is room to improve with consistent effort.'),
+                    $this->metricBasis('Physical rating', (string) $physicalRating, 'A rating of ' . config('recommendations.activity_levels.physical_rating_breakpoints.low_max', 3) . ' or below indicates a low current fitness level. The scale typically runs from 1 (very low) to 9 (athletic), so there is room to improve with consistent effort.'),
                     $this->metricBasis('Activity level', ucfirst($profile['activity_level']), 'Your activity level is estimated from your physical rating history. Building a regular exercise habit is the most effective way to raise this over time.'),
                 ],
                 'priority' => 'high',
@@ -829,11 +956,20 @@ class RecommendationEngine
 
         // Rule: Low bone mass (dietary support)
         if ($boneMass !== null && $weight !== null && $weight > 0) {
-            $boneRatioMin = config('recommendations.bone_mass.' . $profile['gender_key'] . '.minimum_ratio')
-                ?? config('recommendations.bone_mass.default.minimum_ratio', 0.028);
-            $boneRatio = round($boneMass / $weight, 4);
+            $gender = $profile['gender_key'];
+            $boneBands = config("recommendations.bone_mass.{$gender}", config('recommendations.bone_mass.male'));
+            $boneThreshold = 0;
+            foreach ($boneBands as $band) {
+                if ($weight <= $band['max_weight']) {
+                    $boneThreshold = $band['healthy_min'];
+                    break;
+                }
+            }
+            if (!$boneThreshold) {
+                $boneThreshold = end($boneBands)['healthy_min'];
+            }
 
-            if ($boneRatio < $boneRatioMin) {
+            if ($boneMass < $boneThreshold) {
                 $templates[] = [
                     'template_id' => 'bone-health',
                     'template_code' => 'TMPL-NUT-003',
@@ -847,8 +983,8 @@ class RecommendationEngine
                         'Limit excessive sodium and caffeine, which can impair calcium absorption over time.',
                     ],
                     'metric_basis' => [
-                        $this->metricBasis('Bone mass', $boneMass . ' kg', 'Your bone mass is assessed relative to your total body weight, not as a standalone figure. A low ratio suggests your skeleton may need extra nutritional support.'),
-                        $this->metricBasis('Bone-to-weight ratio', round($boneRatio * 100, 1) . '%', 'Your ratio is below the ' . round($boneRatioMin * 100, 1) . '% reference for your gender. This means your bone mass is lower than expected for your body size.'),
+                        $this->metricBasis('Bone mass', $boneMass . ' kg', "For your weight category, the healthy minimum bone mass is {$boneThreshold} kg."),
+                        $this->metricBasis('Body weight', $weight . ' kg', 'Your weight determines the reference range for bone mass.'),
                     ],
                     'priority' => 'medium',
                     'confidence' => 'medium',
@@ -946,28 +1082,28 @@ class RecommendationEngine
     private function resolveReferenceRanges(array $profile): array
     {
         $bodyFatBand = $this->bodyFatBand($profile['gender_key'], $profile['age']);
-        $muscleRatioMinimum = $this->muscleRatioMinimum($profile['gender_key'], $profile['age'], $profile['activity_level']);
+        $muscleRatioMinimum = $this->muscleRatioMinimum($profile['gender_key'], $profile['age']);
         $bodyWaterMinimum = $this->bodyWaterMinimum($profile['gender_key'], $profile['activity_level']);
         $visceralFat = config('recommendations.visceral_fat');
 
         return [
-            'body_fat_healthy_max' => $bodyFatBand['healthy_max'],
-            'body_fat_elevated_min' => $bodyFatBand['elevated_min'],
-            'body_fat_high_min' => $bodyFatBand['high_min'],
+            'body_fat_healthy_max' => (float) $bodyFatBand['healthy_max'],
+            'body_fat_elevated_min' => (float) $bodyFatBand['overweight_min'],
+            'body_fat_high_min' => (float) $bodyFatBand['obese_min'],
             'body_water_minimum' => $bodyWaterMinimum,
             'muscle_ratio_minimum' => $muscleRatioMinimum,
-            'visceral_fat_elevated_min' => $visceralFat['elevated_min'],
-            'visceral_fat_high_min' => $visceralFat['high_min'],
+            'visceral_fat_elevated_min' => (int) $visceralFat['excess_min'],
+            'visceral_fat_high_min' => (int) ($visceralFat['excess_min'] + 2), // High threshold estimated
         ];
     }
 
     private function bodyFatBand(string $genderKey, ?int $age): array
     {
         $bands = config('recommendations.body_fat_percent.' . $genderKey)
-            ?? config('recommendations.body_fat_percent.default');
+            ?? config('recommendations.body_fat_percent.male');
 
         foreach ($bands as $band) {
-            if (($age ?? 40) <= $band['max_age']) {
+            if (($age ?? 35) <= $band['max_age']) {
                 return $band;
             }
         }
@@ -977,27 +1113,31 @@ class RecommendationEngine
 
     private function bodyWaterMinimum(string $genderKey, string $activityLevel): float
     {
-        $base = config('recommendations.body_water_percent.' . $genderKey . '.minimum')
-            ?? config('recommendations.body_water_percent.default.minimum');
-        $adjustment = config('recommendations.body_water_percent.activity_adjustment.' . $activityLevel, 0.0);
+        $type = ($activityLevel === 'high') ? 'athletic' : 'standard';
+        $config = config("recommendations.body_water_percent.{$genderKey}.{$type}")
+               ?? config("recommendations.body_water_percent.male.{$type}");
 
-        return round($base + $adjustment, 1);
+        return (float) $config['minimum'];
     }
 
-    private function muscleRatioMinimum(string $genderKey, ?int $age, string $activityLevel): float
+    private function muscleRatioMinimum(string $genderKey, ?int $age): float
     {
-        $base = config('recommendations.muscle_ratio.' . $genderKey . '.minimum')
-            ?? config('recommendations.muscle_ratio.default.minimum');
-        $activityAdjustment = config('recommendations.muscle_ratio.activity_adjustment.' . $activityLevel, 0.0);
-        $ageAdjustment = 0.0;
+        $bands = config("recommendations.muscle_ratio.{$genderKey}")
+               ?? config('recommendations.muscle_ratio.male');
 
-        foreach (config('recommendations.muscle_ratio.age_adjustment', []) as $rule) {
-            if (($age ?? 0) >= $rule['min_age']) {
-                $ageAdjustment = $rule['delta'];
+        $age = $age ?? 35;
+        $targetBand = null;
+        foreach ($bands as $band) {
+            if ($age <= $band['max_age']) {
+                $targetBand = $band;
+                break;
             }
         }
+        if (!$targetBand) {
+            $targetBand = end($bands);
+        }
 
-        return round($base + $activityAdjustment + $ageAdjustment, 1);
+        return (float) $targetBand['good_min'];
     }
 
     private function normalizeGender(?string $gender): string
