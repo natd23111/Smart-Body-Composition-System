@@ -47,13 +47,30 @@ class BodyCompositionController extends Controller
         $record = BodyComposition::create($validated);
         $user = $request->user();
 
-        $recommendations = $this->recommendationEngine->syncForUser($user);
-        $this->notificationService->notifyRecommendationsGenerated(
-            $user,
-            count($recommendations['data'] ?? []),
-            'measurement-' . $record->id
-        );
-        $this->goalProgressService->evaluateLatestMeasurementGoals($user, $this->notificationService);
+        // Always succeed core operation first
+        try {
+            $recommendations = $this->recommendationEngine->syncForUser($user);
+
+            $this->notificationService->notifyRecommendationsGenerated(
+                $user,
+                count($recommendations['data'] ?? []),
+                'measurement-' . $record->id
+            );
+
+            $this->goalProgressService->evaluateLatestMeasurementGoals(
+                $user,
+                $this->notificationService
+            );
+
+        } catch (\Throwable $e) {
+
+            // Log but DO NOT break user flow
+            \Log::error('Notification/Goal processing failed', [
+                'user_id' => $user->id,
+                'measurement_id' => $record->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'message' => 'Record saved successfully',
