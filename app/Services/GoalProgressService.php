@@ -8,18 +8,19 @@ use App\Models\User;
 class GoalProgressService
 {
     private const METRIC_LABELS = [
-        'weight_kg' => 'Weight',
-        'body_fat_percent' => 'Body Fat',
-        'muscle_mass' => 'Muscle Mass',
-        'bmi' => 'BMI',
-        'visceral_fat' => 'Visceral Fat',
+        'weight_kg'          => 'Weight',
+        'body_fat_percent'   => 'Body Fat',
+        'muscle_mass'        => 'Muscle Mass',
+        'bmi'                => 'BMI',
+        'visceral_fat'       => 'Visceral Fat',
         'body_water_percent' => 'Body Water',
     ];
 
-    private const LOWER_IS_BETTER = ['weight_kg', 'body_fat_percent', 'bmi', 'visceral_fat'];
+    public function evaluateLatestMeasurementGoals(
+        User $user,
+        UserNotificationService $notificationService
+    ): void {
 
-    public function evaluateLatestMeasurementGoals(User $user, UserNotificationService $notificationService): void
-    {
         $latest = $user->bodyCompositions()
             ->orderByDesc('measurement_date')
             ->orderByDesc('created_at')
@@ -34,6 +35,7 @@ class GoalProgressService
             ->get();
 
         foreach ($goals as $goal) {
+
             $currentValue = $goal->metric === 'bmi'
                 ? $this->resolveBmi($user, $latest->weight_kg)
                 : $latest->{$goal->metric};
@@ -46,7 +48,10 @@ class GoalProgressService
                 continue;
             }
 
-            $goal->update(['status' => 'achieved']);
+            $goal->update([
+                'status' => 'achieved'
+            ]);
+
             $notificationService->notifyGoalAchieved(
                 $user,
                 $goal->fresh(),
@@ -55,17 +60,38 @@ class GoalProgressService
         }
     }
 
-    private function goalReached(Goal $goal, float $currentValue): bool
-    {
-        if (in_array($goal->metric, self::LOWER_IS_BETTER, true)) {
-            return $currentValue <= (float) $goal->target_value;
+    private function goalReached(
+        Goal $goal,
+        float $currentValue
+    ): bool {
+
+        $start  = $goal->start_value;
+        $target = (float) $goal->target_value;
+
+        // Cannot determine direction
+        if ($start === null) {
+            return false;
         }
 
-        return $currentValue >= (float) $goal->target_value;
+        // Gain goal
+        if ($target > $start) {
+            return $currentValue >= $target;
+        }
+
+        // Lose goal
+        if ($target < $start) {
+            return $currentValue <= $target;
+        }
+
+        // Maintain goal
+        return abs($currentValue - $target) <= 0.5;
     }
 
-    private function resolveBmi(User $user, $weightKg): ?float
-    {
+    private function resolveBmi(
+        User $user,
+        $weightKg
+    ): ?float {
+
         if (!$user->height_cm || !$weightKg) {
             return null;
         }
@@ -76,6 +102,9 @@ class GoalProgressService
             return null;
         }
 
-        return round($weightKg / ($heightMeters * $heightMeters), 1);
+        return round(
+            $weightKg / ($heightMeters * $heightMeters),
+            1
+        );
     }
 }

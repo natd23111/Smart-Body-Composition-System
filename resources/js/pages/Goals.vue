@@ -272,9 +272,7 @@ const METRICS = [
   { value: 'weight_kg',          label: 'Weight',      unit: 'kg' },
   { value: 'body_fat_percent',   label: 'Body Fat',    unit: '%' },
   { value: 'muscle_mass',        label: 'Muscle Mass', unit: 'kg' },
-  { value: 'bmi',                label: 'BMI',         unit: 'kg/m²' },
   { value: 'visceral_fat',       label: 'Visceral Fat', unit: '' },
-  { value: 'body_water_percent', label: 'Body Water',  unit: '%' },
 ]
 
 const loading    = ref(true)
