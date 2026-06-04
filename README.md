@@ -10,8 +10,6 @@ The system allows users to log body composition measurements (weight, body fat, 
 
 1. [Features](#features)
 2. [Installation Kit](#installation-kit)
-   - [Method A: Docker Compose (Recommended)](#method-a-docker-compose-recommended)
-   - [Method B: Manual Setup](#method-b-manual-setup)
 3. [User Manual](#user-manual)
 4. [Quick Start / Basic Usage](#quick-start--basic-usage)
 5. [Demo Accounts](#demo-accounts)
@@ -39,49 +37,17 @@ The system allows users to log body composition measurements (weight, body fat, 
 
 | Requirement | Version | Notes |
 |---|---|---|---|
-| **Docker Desktop** | 20.x+ | Required for Method A (Docker Compose) |
-| PHP | 8.2 or higher | Required for Method B only |
-| Composer | 2.x | Required for Method B only |
-| Node.js | 20.x or higher | Required for Method B only |
-| MySQL / MariaDB | 5.7+ | Required for Method B only (Docker includes MySQL) |
+| PHP | 8.2 or higher | With extensions: `pdo`, `pdo_mysql`, `mbstring`, `zip`, `gd`, `curl` |
+| Composer | 2.x | [getcomposer.org](https://getcomposer.org) |
+| Node.js | 20.x or higher | Includes npm |
+| MySQL / MariaDB | 5.7+ | Or PostgreSQL 14+ for production |
 | Git | Any | For cloning the repository |
 
-> **Windows users:** Run PowerShell or Command Prompt **as Administrator** when executing installation commands that require system-wide changes (e.g., Docker, PHP path setup).
+> **Windows users:** Using XAMPP is recommended for a quick local setup. Ensure PHP is added to your system PATH before running commands.
 
 ---
 
-### Method A: Docker Compose (Recommended)
-
-This method runs both the app **and MySQL** in containers — no need to install PHP, Composer, Node.js, or MySQL locally. Just Docker.
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/natd23111/Smart-Body-Composition-System.git
-cd Smart-Body-Composition-System
-
-# 2. Build and start all services
-docker-compose up --build
-```
-
-What happens:
-- A **MySQL 8.0 container** starts on port 3306 (with healthcheck)
-- The **app container** builds from the Dockerfile and waits for MySQL to be ready
-- `entrypoint.sh` runs database migrations and seeds demo data automatically
-
-After starting, open **http://localhost:8080** in your browser.
-
-To stop:
-```bash
-docker-compose down
-```
-
-> **Note:** Each `docker-compose up` re-runs `migrate:fresh --seed` (fresh demo data). Database data persists in a Docker volume between runs unless you run `docker-compose down -v`.
-
----
-
-### Method B: Manual Setup
-
-Use this method for local development without Docker — requires PHP, Composer, Node.js, and MySQL installed on your machine.
+### Setup Instructions
 
 ```bash
 # 1. Clone the repository
@@ -130,6 +96,8 @@ Open **http://127.0.0.1:8000** in your browser.
 > composer setup
 > ```
 > This runs `composer install`, copies `.env`, generates the key, migrates, seeds, installs npm packages, and builds frontend assets in one command. You still need to edit `.env` with your database credentials beforehand.
+
+> **Note for Render hosting:** The `dockerfile` and `entrypoint.sh` files in the project root are configured for cloud deployment on [Render.com](https://render.com). They are not required for local development — use the manual setup steps above instead.
 
 ---
 
@@ -269,13 +237,6 @@ Get-Content storage\logs\laravel.log -Tail 50
 
 # Linux / macOS
 tail -50 storage/logs/laravel.log
-```
-
-### Docker container exits immediately
-
-Check the container logs:
-```bash
-docker logs smartbodycomposition-app
 ```
 
 ### Can't log in after registration
