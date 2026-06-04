@@ -1,59 +1,360 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Smart Body Composition & AI-Based Health Tracking Web Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A web-based body composition tracking and health recommendation platform developed as a Final Year Project at Universiti Malaysia Sarawak (UNIMAS).
 
-## About Laravel
+The system allows users to log body composition measurements (weight, body fat, muscle mass, visceral fat, bone mass, and more), track progress over time, set fitness goals, and receive AI-driven personalised health recommendations based on trend analysis.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Table of Contents
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. [Features](#features)
+2. [Installation Kit](#installation-kit)
+   - [Method A: Docker (Recommended)](#method-a-docker-recommended)
+   - [Method B: Manual Setup](#method-b-manual-setup)
+3. [User Manual](#user-manual)
+4. [Quick Start / Basic Usage](#quick-start--basic-usage)
+5. [Demo Accounts](#demo-accounts)
+6. [Troubleshooting / FAQs](#troubleshooting--faqs)
+7. [Project Structure](#project-structure)
+8. [Credits & License](#credits--license)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Features
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **10 Body Metrics** — track weight, body fat %, body fat kg, muscle mass, bone mass, body water %, visceral fat, , Calories kcal, body age, and physical rating.
+- **Trend Analysis** — visualise changes over 7, 14, 30, or 90-day periods with interactive charts
+- **AI Rule-Based Recommendations** — automatic health insights generated from your measurement history, adjusted by age and gender
+- **Goal Tracking** — set targets for weight, body fat, muscle mass, and visceral fat
+- **Notification System** — weekly reports, measurement reminders, and goal-achievement alerts
+- **Admin Panel** — manage users, view records, configure system settings, and customise recommendation templates
+- **Unit Conversion** — toggle between metric (kg/cm) and imperial (lb/in) units
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Installation Kit
 
-### Premium Partners
+### Prerequisites
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Requirement | Version | Notes |
+|---|---|---|
+| PHP | 8.2 or higher | With extensions: `pdo`, `pdo_mysql`, `mbstring`, `zip`, `gd`, `curl` |
+| Composer | 2.x | [getcomposer.org](https://getcomposer.org) |
+| Node.js | 20.x or higher | Includes npm |
+| MySQL / MariaDB | 5.7+ | Or PostgreSQL 14+ for production |
+| Git | Any | For cloning the repository |
+| Docker (optional) | 20.x+ | Only if using the Docker method |
 
-## Contributing
+> **Windows users:** Run PowerShell or Command Prompt **as Administrator** when executing installation commands that require system-wide changes (e.g., Docker, PHP path setup).
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+### Method A: Docker (Recommended)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+This method builds and runs the entire application in a single container — no need to install PHP, Composer, or Node.js locally.
 
-## Security Vulnerabilities
+```bash
+# 1. Clone the repository
+git clone https://github.com/natd23111/Smart-Body-Composition-System.git
+cd Smart-Body-Composition-System
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 2. Copy and configure environment
+#    (Edit .env with your database credentials)
+copy .env.example .env
 
-## License
+# 3. Build the Docker image
+docker build -t smart-body-composition .
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 4. Run the container
+#    Replace <DB_PASSWORD> with your actual database password
+docker run -d -p 8080:80 \
+  -e DB_HOST=<your_db_host> \
+  -e DB_PORT=3306 \
+  -e DB_DATABASE=smartbodycomposition \
+  -e DB_USERNAME=<your_db_user> \
+  -e DB_PASSWORD=<your_db_password> \
+  --name smartbodycomposition-app \
+  smart-body-composition
+```
+
+The container automatically runs database migrations and seeds demo data on startup via `entrypoint.sh`.
+
+After starting, open **http://localhost:8080** in your browser.
+
+> **Note:** If you are using PostgreSQL, set `DB_CONNECTION=pgsql` and `DB_PORT=5432` in the environment variables above.
+
+---
+
+### Method B: Manual Setup
+
+Use this method for local development or if you already have PHP, Composer, and Node.js installed.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/natd23111/Smart-Body-Composition-System.git
+cd Smart-Body-Composition-System
+
+# 2. Install PHP dependencies
+composer install
+
+# 3. Create environment file
+copy .env.example .env
+```
+
+**Edit `.env`** with your database details:
+
+```ini
+DB_CONNECTION=mysql          # or pgsql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=smartbodycomposition
+DB_USERNAME=root
+DB_PASSWORD=your_password
+```
+
+Then continue:
+
+```bash
+# 4. Generate application key
+php artisan key:generate
+
+# 5. Create the database in MySQL/MariaDB first, then run:
+php artisan migrate --seed
+
+# 6. Install frontend dependencies and build assets
+npm install
+npm run build
+
+# 7. Start the development server
+php artisan serve
+```
+
+Open **http://127.0.0.1:8000** in your browser.
+
+> **Alternative:** Use the bundled composer script to automate steps 2–6:
+> ```bash
+> composer setup
+> ```
+> This runs `composer install`, copies `.env`, generates the key, migrates, seeds, installs npm packages, and builds frontend assets in one command. You still need to edit `.env` with your database credentials beforehand.
+
+---
+
+## User Manual
+
+A comprehensive user manual is available at:
+
+📄 **`docs/user_manual.pdf`**
+
+The manual covers:
+
+1. **Account Registration & Setup** — creating an account, setting up your profile (age, gender, height)
+2. **Entering Measurements** — how to log body composition readings from your smart scale
+3. **Dashboard Overview** — understanding the dashboard widgets and key metrics
+4. **Trends & Charts** — interpreting trend graphs across different time periods
+5. **Goals** — setting, tracking, and achieving fitness goals
+6. **Health Recommendations** — understanding AI-generated insights and acting on them
+7. **Notifications** — managing weekly reports, reminders, and alerts
+8. **Admin Panel** — user management, system settings, recommendation templates
+9. **Troubleshooting** — common issues and their solutions
+
+> If the manual is not yet included with your download, check the latest release on the [GitHub repository](https://github.com/natd23111/Smart-Body-Composition-System).
+
+---
+
+## Quick Start / Basic Usage
+
+### Step 1 — Create an Account
+
+Navigate to http://127.0.0.1:8000 and click **Register**. Fill in your name, email, and password.
+
+### Step 2 — Complete Your Profile
+
+On first login, you will be prompted to set up your profile:
+- **Age**
+- **Gender** (Male / Female)
+- **Height** (cm or in, depending on your unit preference)
+
+### Step 3 — Enter Body Composition Data
+
+Go to **Body Composition** from the sidebar and click **Add New Record**. Enter the values from your smart scale:
+- Weight (kg)
+- Body Fat %
+- Body Fat (kg)
+- Muscle Mass (kg)
+- Bone Mass (kg)
+- Body Water %
+- Visceral Fat Level
+- BMR / Daily Caloric Intake (kcal)
+- Body Age
+- Physical Rating (1–9)
+
+> **Tip:** Take measurements at the same time each day (e.g., morning after waking) for consistent trend data.
+
+### Step 4 — Explore the System
+
+| Page | What you can do |
+|---|---|
+| **Dashboard** | View summary cards, latest measurement, and recent trends |
+| **Trends** | Interactive line charts for any metric over 7/14/30/90 days |
+| **Recommendations** | AI-generated health insights based on your data changes |
+| **Goals** | Set weight/fat/muscle/visceral-fat targets with deadlines |
+| **Notifications** | View weekly reports, reminders, and goal alerts |
+| **Settings** | Change password, unit preferences, notification toggles |
+| **AI Tips** | Quick health tips generated from your profile |
+
+### Step 5 — Generate Recommendations
+
+After entering at least **two measurements** (so the system can detect a trend), go to **Recommendations** and click **Generate**. The system analyses your measurement history and produces personalised advice cards.
+
+---
+
+## Demo Accounts
+
+The database seeder creates the following accounts for testing:
+
+| Role | Email | Password |
+|---|---|---|
+| **Demo User** | `ahmad.fadhil@example.com` | `password` |
+| **Admin** | `admin.demo@example.com` | `password` |
+
+The demo user account includes **8 weeks of sample body composition data** (Jan–Apr 2026), active goals, and pre-generated recommendations — ideal for exploring the system's features immediately.
+
+> **Security note:** Change these passwords in production or delete the demo accounts after testing.
+
+---
+
+## Troubleshooting / FAQs
+
+### "Database connection refused" on `php artisan migrate`
+
+- Make sure MySQL is running.
+- Verify `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in your `.env` file.
+- Ensure the database exists. Create it manually if needed:
+  ```sql
+  CREATE DATABASE smartbodycomposition;
+  ```
+
+### "Vite manifest not found" or blank page
+
+The frontend assets have not been built. Run:
+```bash
+npm run build
+```
+For development with hot-reload, use:
+```bash
+npm run dev
+```
+
+### File permission errors (Linux / macOS)
+
+```bash
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+```
+
+### Port 8000 already in use
+
+Use a different port:
+```bash
+php artisan serve --port=8080
+```
+
+### "Specified key was too long" error (MySQL < 5.7.7)
+
+Add the following to `app/Providers/AppServiceProvider.php` inside the `boot()` method:
+```php
+Schema::defaultStringLength(191);
+```
+
+### Application shows "500 Server Error" after setup
+
+Check the Laravel log file:
+```bash
+# Windows (PowerShell)
+Get-Content storage\logs\laravel.log -Tail 50
+
+# Linux / macOS
+tail -50 storage/logs/laravel.log
+```
+
+### Docker container exits immediately
+
+Check the container logs:
+```bash
+docker logs smartbodycomposition-app
+```
+
+### Can't log in after registration
+
+Ensure your database is seeded (`php artisan migrate --seed`). If you registered a new account, check that `email_verified_at` is set, or check `storage/logs/laravel.log` for any authentication errors.
+
+---
+
+## Project Structure
+
+```
+Smart-Body-Composition-System/
+│
+├── app/
+│   ├── Enums/                  # Role definitions (user, admin)
+│   ├── Http/
+│   │   ├── Controllers/        # API & auth controllers
+│   │   └── Middleware/         # Session timeout, admin gate
+│   ├── Models/                 # User, BodyComposition, Goal, etc.
+│   ├── Services/               # Recommendation engine, goal progress, notifications
+│   └── Support/                # Admin security settings helper
+│
+├── config/
+│   ├── recommendations.php     # Reference ranges for all body metrics
+│   └── ...                     # App, auth, database, sanctum, etc.
+│
+├── database/
+│   ├── migrations/             # Database schema definitions
+│   ├── seeders/                # Demo data (users, measurements, templates)
+│   └── factories/              # Test data factories
+│
+├── resources/
+│   ├── js/                     # Vue 3 frontend source
+│   │   ├── components/         # Reusable components (charts, tabs)
+│   │   ├── layouts/            # Admin & user page layouts
+│   │   ├── pages/              # Page components (Dashboard, Trends, etc.)
+│   │   ├── router/             # Vue Router (auth/admin guards)
+│   │   ├── services/           # Axios API client & auth service
+│   │   └── stores/             # Pinia state stores (auth, unit conversion)
+│   ├── css/                    # Tailwind CSS entry
+│   └── views/                  # Laravel Blade templates (SPA mount)
+│
+├── routes/
+│   ├── api.php                 # REST API endpoints
+│   ├── web.php                 # SPA catch-all route
+│   └── console.php             # Scheduled tasks (daily notifications)
+│
+├── public/                     # Web root (index.php, built assets)
+├── storage/                    # Logs, cache, framework files
+├── tests/                      # PHPUnit test suite
+│
+├── dockerfile                  # Docker build configuration
+├── entrypoint.sh               # Container startup script
+├── artisan                     # Laravel CLI
+├── composer.json               # PHP dependencies
+├── package.json                # Node.js dependencies
+└── vite.config.js              # Vite bundler configuration
+```
+
+---
+
+## Credits & License
+
+**Developer:** Nathanael Anak Chulif @ Douglas Chulip  
+**Supervisor** Miss Tay Lee Chee
+**Institution:** Universiti Malaysia Sarawak (UNIMAS)  
+**Project Type:** Final Year Project (FYP)  
+
+---
+
+**License:** All rights reserved. This project is submitted as part of an academic programme. Redistribution, modification, or commercial use requires prior written permission from the author.
+
+---
+
+*For questions or support, please open an issue on the [GitHub repository](https://github.com/natd23111/Smart-Body-Composition-System).*
