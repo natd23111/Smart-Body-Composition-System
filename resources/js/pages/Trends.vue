@@ -122,7 +122,7 @@
                 <div class="flex items-center gap-1">
                   <span class="text-xl font-bold" :class="changeArrowClass(insight)">{{ trendArrow(insight.direction) }}</span>
                   <p class="text-2xl font-bold">
-                    {{ Math.abs(insight.change_percent).toFixed(1) }}%
+                    {{ Math.abs(insight.abs_change).toFixed(1) }}{{ insight.unit ?? '' }}
                   </p>
                 </div>
               </div>
@@ -180,7 +180,7 @@
                   <p class="text-sm text-gray-700">
                     This conclusion is supported by {{ insight.data_points?.length ?? 0 }} measurement{{ (insight.data_points?.length ?? 0) === 1 ? '' : 's' }} showing a
                     {{ insight.direction === 'stable' ? 'stable' : insight.direction + 'ward' }} trend of
-                    {{ !isNaN(Math.abs(Number(insight.change_percent))) ? Math.abs(Number(insight.change_percent)).toFixed(1) : '-' }}% over the selected time period.
+                    {{ !isNaN(Math.abs(Number(insight.abs_change))) ? Math.abs(Number(insight.abs_change)).toFixed(1) : '-' }}{{ insight.unit ?? '' }} over the selected time period.
                   </p>
                 </div>
               </div>
