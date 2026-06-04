@@ -10,7 +10,7 @@ The system allows users to log body composition measurements (weight, body fat, 
 
 1. [Features](#features)
 2. [Installation Kit](#installation-kit)
-   - [Method A: Docker (Recommended)](#method-a-docker-recommended)
+   - [Method A: Docker Compose (Recommended)](#method-a-docker-compose-recommended)
    - [Method B: Manual Setup](#method-b-manual-setup)
 3. [User Manual](#user-manual)
 4. [Quick Start / Basic Usage](#quick-start--basic-usage)
@@ -38,57 +38,50 @@ The system allows users to log body composition measurements (weight, body fat, 
 ### Prerequisites
 
 | Requirement | Version | Notes |
-|---|---|---|
-| PHP | 8.2 or higher | With extensions: `pdo`, `pdo_mysql`, `mbstring`, `zip`, `gd`, `curl` |
-| Composer | 2.x | [getcomposer.org](https://getcomposer.org) |
-| Node.js | 20.x or higher | Includes npm |
-| MySQL / MariaDB | 5.7+ | Or PostgreSQL 14+ for production |
+|---|---|---|---|
+| **Docker Desktop** | 20.x+ | Required for Method A (Docker Compose) |
+| PHP | 8.2 or higher | Required for Method B only |
+| Composer | 2.x | Required for Method B only |
+| Node.js | 20.x or higher | Required for Method B only |
+| MySQL / MariaDB | 5.7+ | Required for Method B only (Docker includes MySQL) |
 | Git | Any | For cloning the repository |
-| Docker (optional) | 20.x+ | Only if using the Docker method |
 
 > **Windows users:** Run PowerShell or Command Prompt **as Administrator** when executing installation commands that require system-wide changes (e.g., Docker, PHP path setup).
 
 ---
 
-### Method A: Docker (Recommended)
+### Method A: Docker Compose (Recommended)
 
-This method builds and runs the entire application in a single container — no need to install PHP, Composer, or Node.js locally.
+This method runs both the app **and MySQL** in containers — no need to install PHP, Composer, Node.js, or MySQL locally. Just Docker.
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/natd23111/Smart-Body-Composition-System.git
 cd Smart-Body-Composition-System
 
-# 2. Copy and configure environment
-#    (Edit .env with your database credentials)
-copy .env.example .env
-
-# 3. Build the Docker image
-docker build -t smart-body-composition .
-
-# 4. Run the container
-#    Replace <DB_PASSWORD> with your actual database password
-docker run -d -p 8080:80 \
-  -e DB_HOST=<your_db_host> \
-  -e DB_PORT=3306 \
-  -e DB_DATABASE=smartbodycomposition \
-  -e DB_USERNAME=<your_db_user> \
-  -e DB_PASSWORD=<your_db_password> \
-  --name smartbodycomposition-app \
-  smart-body-composition
+# 2. Build and start all services
+docker-compose up --build
 ```
 
-The container automatically runs database migrations and seeds demo data on startup via `entrypoint.sh`.
+What happens:
+- A **MySQL 8.0 container** starts on port 3306 (with healthcheck)
+- The **app container** builds from the Dockerfile and waits for MySQL to be ready
+- `entrypoint.sh` runs database migrations and seeds demo data automatically
 
 After starting, open **http://localhost:8080** in your browser.
 
-> **Note:** If you are using PostgreSQL, set `DB_CONNECTION=pgsql` and `DB_PORT=5432` in the environment variables above.
+To stop:
+```bash
+docker-compose down
+```
+
+> **Note:** Each `docker-compose up` re-runs `migrate:fresh --seed` (fresh demo data). Database data persists in a Docker volume between runs unless you run `docker-compose down -v`.
 
 ---
 
 ### Method B: Manual Setup
 
-Use this method for local development or if you already have PHP, Composer, and Node.js installed.
+Use this method for local development without Docker — requires PHP, Composer, Node.js, and MySQL installed on your machine.
 
 ```bash
 # 1. Clone the repository
