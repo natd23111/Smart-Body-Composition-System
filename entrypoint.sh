@@ -12,13 +12,12 @@ echo "--- LARAVEL CONFIG ---"
 php artisan env
 php artisan config:show || echo "config:show not available"
 
+echo "--- RUNNING MIGRATIONS ---"
+php artisan migrate:fresh --seed --force
+
 echo "--- CLEARING CONFIG AND CACHE ---"
 php artisan config:clear
 php artisan cache:clear
-
-
-echo "--- RUNNING MIGRATIONS ---"
-php artisan migrate:fresh --seed --force
 
 # echo "--- SEEDING DATABASE ---"
 # php artisan db:seed --force
