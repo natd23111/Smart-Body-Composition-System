@@ -303,7 +303,6 @@ Smart-Body-Composition-System/
 **Developer:** Nathanael Anak Chulif @ Douglas Chulip  
 **Supervisor** Miss Tay Lee Chee
 **Institution:** Universiti Malaysia Sarawak (UNIMAS)  
-**Project Type:** Final Year Project (FYP)  
 
 ---
 
