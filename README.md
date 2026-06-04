@@ -105,7 +105,7 @@ Open **http://127.0.0.1:8000** in your browser.
 
 A comprehensive user manual is available at:
 
-📄 **`docs/user_manual.pdf`**
+📄 **`docs/Smart_body_composition_user_manual.pdf`**
 
 The manual covers:
 
