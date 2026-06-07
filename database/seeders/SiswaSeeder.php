@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\BodyComposition;
 use App\Models\User;
+use App\Services\RecommendationEngine;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -188,11 +189,14 @@ class SiswaSeeder extends Seeder
 			],
 		];
 
-		foreach ($measurements as $measurement) {
-			BodyComposition::create([
-				'user_id' => $user->id,
-				...$measurement,
-			]);
-		}
-	}
+        foreach ($measurements as $measurement) {
+            BodyComposition::create([
+                'user_id' => $user->id,
+                ...$measurement,
+            ]);
+        }
+
+        $engine = app(RecommendationEngine::class);
+        $engine->syncForUser($user);
+    }
 }

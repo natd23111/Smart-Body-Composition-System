@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             RecommendationTemplateSeeder::class,
             SiswaSeeder::class,
+            TrendDemoSeeder::class,
         ]);
     }
 }
